@@ -178,3 +178,64 @@ export function effectorPoint(
   ctx.restore();
   ctx.closePath();
 }
+
+export function maxWorkingArea(
+  ctx: CanvasRenderingContext2D,
+  start,
+  TOTAL_ARMS_LENGTH: number,
+  OFFSET_EFFECTOR_X: number,
+) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Disegna la semi circonferenza massima che il braccio può disegnare
+  for (let alpha = 1; alpha < 181; alpha++) {
+    start(
+      ctx,
+      Math.sin(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
+        OFFSET_EFFECTOR_X,
+      Math.cos(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+      'red',
+    );
+  }
+  for (let alpha = 180; alpha > 1; alpha--) {
+    start(
+      ctx,
+      Math.sin(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+      Math.cos(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+      'blue',
+    );
+  }
+  // *************************************************************
+
+  // Disegna l'area massima rettangolare inscritta nel cerchio
+  start(
+    ctx,
+    Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+    1,
+  );
+  start(
+    ctx,
+    Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+    Math.cos(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+    'yellow',
+  );
+  start(
+    ctx,
+    Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+    Math.cos(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+    'yellow',
+  );
+  start(
+    ctx,
+    Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+    0,
+    'yellow',
+  );
+
+  start(
+    ctx,
+    Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+    0,
+    'yellow',
+  );
+  // **************************************************************
+}

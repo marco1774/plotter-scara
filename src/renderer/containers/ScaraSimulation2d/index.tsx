@@ -16,6 +16,7 @@ import {
   XYToAngle,
   clearCanvas,
   effectorPoint,
+  maxWorkingArea,
 } from './scaraUtils';
 import { gcode } from './scaraUtils/gcodeProva';
 import { MainContainer } from '../../components/MainContainer';
@@ -31,7 +32,7 @@ export function ScaraSimulation2d(props: Props) {
   const OFFSET_ORIGIN_X = 0;
   // L'origine dell'effector sarebbe 0,0 al centro dell'area di lavoro rettangolare in X,
   // questo aggiunge un offset per portalo all'estremo
-  let OFFSET_EFFECTOR_X = 140; // da rendere dinamica
+  const OFFSET_EFFECTOR_X = 140; // da rendere dinamica
   // Lunghezza primo braccio
   const FIRST_ARM_LENGTH = 100;
   // lungezza secondo braccio
@@ -66,21 +67,15 @@ export function ScaraSimulation2d(props: Props) {
     const ctx = canvas.getContext('2d');
     if (canvas == null || ctx == null) return;
     let path = [] as { x: any; y: any; color: any }[];
-    let x = 0;
-    // eslint-disable-next-line prefer-const
-    let y = 0;
+    let gcodeCount = 0;
+
     /*
      * sposta le coordinate dell'origine al centro del canvas
      * inverte direzione asse Y
      */
     centerOriginAndFlipYAxis(ctx, canvas, OFFSET_CARTESIAN_PLANE_AXIS_Y, SCALA);
 
-    function start(
-      ctx: CanvasRenderingContext2D,
-      x: number,
-      y: number,
-      DRAW_GCODE_PATH_COLOR = 'purple',
-    ) {
+    function start(ctx, x, y, DRAW_GCODE_PATH_COLOR = 'purple') {
       // inverse kinematics solver
       const [tetha1, tetha2] = XYToAngle(
         x - OFFSET_EFFECTOR_X,
@@ -127,91 +122,29 @@ export function ScaraSimulation2d(props: Props) {
       });
 
       // Disegna sul canvas
-      drawGCodePath(
-        ctx,
-        path,
-
-        DRAW_GCODE_PATH_LINE_WIDTH,
-      );
+      drawGCodePath(ctx, path, DRAW_GCODE_PATH_LINE_WIDTH);
 
       // Individua il punto effector
       effectorPoint(ctx, x, y, OFFSET_EFFECTOR_X);
     }
 
-    function maxWorkingArea(
-      ctx: CanvasRenderingContext2D,
-      start: {
-        (ctx: any, x: any, y: any, DRAW_GCODE_PATH_COLOR?: string): void;
-        (arg0: any, arg1: number, arg2: number, arg3: string | undefined): void;
-      },
-      TOTAL_ARMS_LENGTH: number,
-      OFFSET_X: number,
-    ) {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      OFFSET_EFFECTOR_X = 0;
-      // Disegna la semi circonferenza massima che il braccio può disegnare
-      for (let alpha = 1; alpha < 181; alpha++) {
-        start(
-          ctx,
-          Math.sin(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-          Math.cos(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-          'red',
-        );
-      }
-      for (let alpha = 180; alpha > 1; alpha--) {
-        start(
-          ctx,
-          Math.sin(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-          Math.cos(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-          'blue',
-        );
-      }
-      // *************************************************************
-
-      // Disegna l'area massima rettangolare inscritta nel cerchio
-      start(ctx, Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH, 1);
-      start(
-        ctx,
-        Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-        Math.cos(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-        'yellow',
-      );
-      start(
-        ctx,
-        Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-        Math.cos(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-        'yellow',
-      );
-      start(
-        ctx,
-        Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-        0,
-        'yellow',
-      );
-
-      start(
-        ctx,
-        Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-        0,
-        'yellow',
-      );
-      // **************************************************************
-      OFFSET_EFFECTOR_X = OFFSET_X;
-    }
+    // Disegna la semi circonferenza massima che il braccio può disegnare
+    // Disegna l'area massima rettangolare inscritta nel cerchio
     maxWorkingArea(ctx, start, TOTAL_ARMS_LENGTH, OFFSET_EFFECTOR_X);
 
     function animate() {
-      if (x >= gcode.length) {
+      if (gcodeCount >= gcode.length) {
         path = [];
       } else {
         if (ctx == null) return;
-        start(ctx, gcode[x][0], gcode[x][1], 'cyan');
-        x++;
+        start(ctx, gcode[gcodeCount][0], gcode[gcodeCount][1], 'cyan');
+        gcodeCount++;
       }
       requestAnimationFrame(animate);
     }
 
     animate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
