@@ -41,11 +41,19 @@ export function centerOriginAndFlipYAxis(
   ctx.scale(SCALA, -SCALA); // cambia orientamento asse y numeri positi verso alto
 }
 
-export function drawCartesianPlane(ctx: CanvasRenderingContext2D) {
+export function drawCartesianPlane(
+  ctx: CanvasRenderingContext2D,
+  GRID_POINTS_DISTANCE: number,
+) {
   if (ctx == null) return;
 
   ctx.save();
   ctx.beginPath();
+  for (let pointX = -200; pointX < 200; pointX += GRID_POINTS_DISTANCE) {
+    for (let pointY = 0; pointY < 200; pointY += GRID_POINTS_DISTANCE) {
+      ctx.fillRect(pointX, pointY, 1, 1);
+    }
+  }
   ctx.moveTo(-400, 0);
   ctx.lineTo(400, 0);
   ctx.strokeStyle = 'black';

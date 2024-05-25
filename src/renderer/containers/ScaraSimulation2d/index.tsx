@@ -28,6 +28,8 @@ export function ScaraSimulation2d(props: Props) {
 
   // Modifica la scala del canvas
   const SCALA = 1;
+  // Modifica la velocità dell'animazione
+  const FPS = 10;
   // Il braccio è ancorato all'origine 0,0, questo aggiunge un offset in X
   const OFFSET_ORIGIN_X = 0;
   // L'origine dell'effector sarebbe 0,0 al centro dell'area di lavoro rettangolare in X,
@@ -43,13 +45,15 @@ export function ScaraSimulation2d(props: Props) {
   // Colore di backgraund del canvas
   const CANVAS_BG_COLOR = '#afafaf';
   // Spessore della linea di disegno del path
-  const DRAW_GCODE_PATH_LINE_WIDTH = 0.6;
+  const DRAW_GCODE_PATH_LINE_WIDTH = 1;
   // Canvas height
   const canvasHeight = window.innerHeight / 1.5;
   // Canvas width
   const canvasWidth = window.innerWidth / 1.5;
   // L'origine del piano cartesiano 0,0 è impostato al centro del canvas, aggiunge un offset in Y
-  const OFFSET_CARTESIAN_PLANE_AXIS_Y = canvasHeight / 3;
+  const OFFSET_CARTESIAN_PLANE_AXIS_Y = canvasHeight / 2;
+  // Distanza punti griglia piano cartesiano
+  const GRID_POINTS_DISTANCE = 20;
 
   // let gcode = [
   //   [0, 10],
@@ -93,7 +97,7 @@ export function ScaraSimulation2d(props: Props) {
       clearCanvas(ctx, canvas);
 
       // Disegna il piano cartesiano
-      drawCartesianPlane(ctx);
+      drawCartesianPlane(ctx, GRID_POINTS_DISTANCE);
 
       // Disegna e muove il primo braccio
       drawAndMoveFirstArm(
@@ -131,8 +135,8 @@ export function ScaraSimulation2d(props: Props) {
     // Disegna la semi circonferenza massima che il braccio può disegnare
     // Disegna l'area massima rettangolare inscritta nel cerchio
     maxWorkingArea(ctx, start, TOTAL_ARMS_LENGTH, OFFSET_EFFECTOR_X);
-
-    function animate() {
+    let myTimeout: any;
+    const animateCallback = (animate) => {
       if (gcodeCount >= gcode.length) {
         path = [];
       } else {
@@ -141,9 +145,20 @@ export function ScaraSimulation2d(props: Props) {
         gcodeCount++;
       }
       requestAnimationFrame(animate);
+    };
+    function animate() {
+      myTimeout = setTimeout(() => {
+        animateCallback(animate);
+      }, 1000 / FPS);
     }
 
     animate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps, consistent-return
+    return () => {
+      // eslint-disable-next-line no-console
+      console.log('pulizia');
+      clearTimeout(myTimeout);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

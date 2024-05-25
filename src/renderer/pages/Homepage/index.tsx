@@ -6,7 +6,12 @@ import { Button } from '../../components/Button';
 export function HomePage() {
   const navigate = useNavigate();
 
-  function handleIPC() {}
+  function handleIPC() {
+    window.electron.ipcRenderer.sendMessage(
+      'ipc-prova',
+      'questa è una prova di ipc',
+    );
+  }
   return (
     <MainContainer>
       <section>
@@ -19,7 +24,7 @@ export function HomePage() {
         >
           prova
         </Button>
-        <Button variant="contained" onclick={() => handleIPC}>
+        <Button variant="contained" onclick={() => handleIPC()}>
           prova comunicazione
         </Button>
       </section>
