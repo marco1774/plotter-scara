@@ -21,46 +21,51 @@ import {
 import { gcode } from './scaraUtils/gcodeProva';
 import { MainContainer } from '../../components/MainContainer';
 
+import styles from './styles.module.scss';
+
 interface Props {}
 
 export function ScaraSimulation2d(props: Props) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   // Modifica la scala del canvas
-  const SCALA = 1;
+  const SCALA = 2;
   // Modifica la velocità dell'animazione
   const FPS = 10;
   // Il braccio è ancorato all'origine 0,0, questo aggiunge un offset in X
   const OFFSET_ORIGIN_X = 0;
-  // L'origine dell'effector sarebbe 0,0 al centro dell'area di lavoro rettangolare in X,
-  // questo aggiunge un offset per portalo all'estremo
-  const OFFSET_EFFECTOR_X = 140; // da rendere dinamica
   // Lunghezza primo braccio
   const FIRST_ARM_LENGTH = 100;
   // lungezza secondo braccio
-  const SECOND_ARM_LENGTH = 100;
+  const SECOND_ARM_LENGTH = FIRST_ARM_LENGTH;
   const FOOTER_ROOM = 300;
   // Lunghezza totale dei due bracci
   const TOTAL_ARMS_LENGTH = FIRST_ARM_LENGTH - 1 + (SECOND_ARM_LENGTH - 1);
   // Colore di backgraund del canvas
-  const CANVAS_BG_COLOR = '#afafaf';
+  const CANVAS_BG_COLOR = '#f4f4f4';
   // Spessore della linea di disegno del path
   const DRAW_GCODE_PATH_LINE_WIDTH = 1;
   // Canvas height
-  const canvasHeight = window.innerHeight / 1.5;
+  const canvasHeight = TOTAL_ARMS_LENGTH * SCALA * 1.6;
   // Canvas width
-  const canvasWidth = window.innerWidth / 1.5;
+  const canvasWidth = TOTAL_ARMS_LENGTH * SCALA * 2 + 10;
   // L'origine del piano cartesiano 0,0 è impostato al centro del canvas, aggiunge un offset in Y
-  const OFFSET_CARTESIAN_PLANE_AXIS_Y = canvasHeight / 2;
+  const OFFSET_CARTESIAN_PLANE_AXIS_Y =
+    TOTAL_ARMS_LENGTH - TOTAL_ARMS_LENGTH * 0.2;
   // Distanza punti griglia piano cartesiano
-  const GRID_POINTS_DISTANCE = 20;
+  const GRID_POINTS_DISTANCE = 10;
+  // L'origine dell'effector sarebbe 0,0 al centro dell'area di lavoro rettangolare in X,
+  // questo aggiunge un offset per portalo all'estremo
+  const OFFSET_EFFECTOR_X = TOTAL_ARMS_LENGTH * 0.707;
+  // Spessore linea arm
+  const LINE_WIDTH_ARM = 10;
 
-  // let gcode = [
-  //   [0, 10],
-  //   [10, 10],
-  //   [10, 0],
-  //   [0, 0],
-  // ];
+  const gcode = [
+    [0, 20],
+    [20, 20],
+    [20, 0],
+    [0, 0],
+  ];
 
   React.useEffect(() => {
     // canvas config
@@ -105,6 +110,7 @@ export function ScaraSimulation2d(props: Props) {
         FIRST_ARM_X,
         FIRST_ARM_Y,
         OFFSET_ORIGIN_X,
+        LINE_WIDTH_ARM,
         'red',
       );
 
@@ -116,6 +122,7 @@ export function ScaraSimulation2d(props: Props) {
         FIRST_ARM_X,
         FIRST_ARM_Y,
         SECOND_ARM_LENGTH,
+        LINE_WIDTH_ARM,
       );
 
       // Aggiungi la posizione dell'effettore al percorso
@@ -164,8 +171,13 @@ export function ScaraSimulation2d(props: Props) {
 
   return (
     <MainContainer>
-      <h1>simulation2d</h1>
-      <canvas id="canvas" ref={canvasRef} />
+      <header className={styles.box_header}>
+        <h1>Simulazione 2D</h1>
+      </header>
+      <section className={styles.box_canvas}>
+        <canvas id="canvas" ref={canvasRef} />
+      </section>
+      <section>opzioni</section>
     </MainContainer>
   );
 }

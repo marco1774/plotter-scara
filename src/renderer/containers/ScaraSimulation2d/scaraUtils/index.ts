@@ -49,11 +49,13 @@ export function drawCartesianPlane(
 
   ctx.save();
   ctx.beginPath();
-  for (let pointX = -200; pointX < 200; pointX += GRID_POINTS_DISTANCE) {
-    for (let pointY = 0; pointY < 200; pointY += GRID_POINTS_DISTANCE) {
+  ctx.fillStyle = '#999';
+  for (let pointX = -160; pointX < 170; pointX += GRID_POINTS_DISTANCE) {
+    for (let pointY = 0; pointY < 160; pointY += GRID_POINTS_DISTANCE) {
       ctx.fillRect(pointX, pointY, 1, 1);
     }
   }
+  ctx.beginPath();
   ctx.moveTo(-400, 0);
   ctx.lineTo(400, 0);
   ctx.strokeStyle = 'black';
@@ -73,6 +75,7 @@ export function drawAndMoveFirstArm(
   FIRST_ARM_X: number,
   FIRST_ARM_Y: number,
   OFFSET_ORIGIN_X: number,
+  LINE_WIDTH_ARM: number,
   color: string,
 ) {
   if (ctx == null) return;
@@ -81,7 +84,7 @@ export function drawAndMoveFirstArm(
   ctx.moveTo(0 + OFFSET_ORIGIN_X, 0); // Origine Primo Braccio
   ctx.lineTo(FIRST_ARM_X, FIRST_ARM_Y);
   ctx.strokeStyle = color;
-  ctx.lineWidth = 20;
+  ctx.lineWidth = LINE_WIDTH_ARM;
   ctx.lineCap = 'round';
   ctx.stroke(); // Render del path
   ctx.closePath();
@@ -94,6 +97,7 @@ export function drawAndMoveSecondArm(
   firstArmEndX: number,
   firstArmEndY: number,
   SECOND_ARM_LENGTH: number,
+  LINE_WIDTH_ARM: number,
 ): { secondArmEndX: number; secondArmEndY: number } {
   if (ctx == null) return { secondArmEndX: 0, secondArmEndY: 0 };
 
@@ -106,7 +110,7 @@ export function drawAndMoveSecondArm(
     firstArmEndY + Math.cos(angle1 + angle2) * SECOND_ARM_LENGTH;
   ctx.lineTo(secondArmEndX, secondArmEndY);
   ctx.strokeStyle = 'green';
-  ctx.lineWidth = 20;
+  ctx.lineWidth = LINE_WIDTH_ARM;
   ctx.lineCap = 'round';
   ctx.stroke();
   return {
@@ -181,7 +185,7 @@ export function effectorPoint(
   ctx.beginPath();
   ctx.arc(x - OFFSET_EFFECTOR_X, y, 1, 0, 2 * Math.PI);
   ctx.strokeStyle = 'yellow';
-  ctx.lineWidth = 10;
+  ctx.lineWidth = 5;
   ctx.stroke();
   ctx.restore();
   ctx.closePath();
