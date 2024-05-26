@@ -7,6 +7,7 @@
  *
  */
 import * as React from 'react';
+import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch';
 import {
   centerOriginAndFlipYAxis,
   drawCartesianPlane,
@@ -224,7 +225,11 @@ export function ScaraSimulation2d(props: Props) {
         <h1>Simulazione 2D</h1>
       </header>
       <section className={styles.box_canvas}>
-        <canvas id="canvas" ref={canvasRef} />
+        <TransformWrapper>
+          <TransformComponent>
+            <canvas id="canvas" ref={canvasRef} />
+          </TransformComponent>
+        </TransformWrapper>
       </section>
       <section style={{ display: 'flex' }}>
         opzioni
