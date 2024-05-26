@@ -23,6 +23,7 @@ import { gcode } from './scaraUtils/gcodeProva';
 import { MainContainer } from '../../components/MainContainer';
 
 import styles from './styles.module.scss';
+import { PathTypes } from './scaraUtils/scaraSimulation2d.types';
 
 interface Props {}
 
@@ -45,7 +46,7 @@ export function ScaraSimulation2d(props: Props) {
   // Colore di backgraund del canvas
   const CANVAS_BG_COLOR = '#f4f4f4';
   // Spessore della linea di disegno del path
-  const DRAW_GCODE_PATH_LINE_WIDTH = 0.2;
+  const DRAW_GCODE_PATH_LINE_WIDTH = 0.6;
   // Canvas height
   const canvasHeight = TOTAL_ARMS_LENGTH * SCALA * 1.6;
   // Canvas width
@@ -91,17 +92,21 @@ export function ScaraSimulation2d(props: Props) {
   React.useEffect(() => {
     const parsedGcodeSplitToLines = gcodeContent.split(/\r?\n/);
     const gcode = parsedGcodeSplitToLines
-      .filter(
-        (line) =>
-          line.startsWith('G1') &&
-          line.includes('X') &&
-          line.includes('Y') &&
-          line.includes('E'),
-      )
+      .filter((line) => {
+        return line.startsWith('G1') || line.startsWith('G01');
+      })
       .map((line) => {
-        const analizedLine = line.split(' ');
-        return [+analizedLine[1].slice(1), +analizedLine[2].slice(1), true];
-      });
+        if (line.includes('E') && line.includes('X') && line.includes('Y')) {
+          const analizedLine = line.split(' ');
+          return [+analizedLine[1].slice(1), +analizedLine[2].slice(1), true];
+        }
+        if (line.includes('F') && line.includes('X') && line.includes('Y')) {
+          const analizedLine = line.split(' ');
+          return [+analizedLine[1].slice(1), +analizedLine[2].slice(1), false];
+        }
+        return ['no'];
+      })
+      .filter((line) => line[0] !== 'no');
     setGcodeParsed(gcode);
   }, [gcodeContent]);
 
@@ -113,14 +118,14 @@ export function ScaraSimulation2d(props: Props) {
     canvas.style.backgroundColor = CANVAS_BG_COLOR;
     const ctx = canvas.getContext('2d');
     if (canvas == null || ctx == null) return;
-    const path = [] as { x: any; y: any; color: any }[];
+    const path = [] as PathTypes[];
     /*
      * sposta le coordinate dell'origine al centro del canvas
      * inverte direzione asse Y
      */
     centerOriginAndFlipYAxis(ctx, canvas, OFFSET_CARTESIAN_PLANE_AXIS_Y, SCALA);
 
-    function start(ctx, x, y, DRAW_GCODE_PATH_COLOR = 'purple') {
+    function start(ctx, x, y, canDraw, DRAW_GCODE_PATH_COLOR = 'purple') {
       // inverse kinematics solver
       const [tetha1, tetha2] = XYToAngle(
         x - OFFSET_EFFECTOR_X,
@@ -166,6 +171,7 @@ export function ScaraSimulation2d(props: Props) {
         x: secondArmEndX,
         y: secondArmEndY,
         color: DRAW_GCODE_PATH_COLOR,
+        canDraw,
       });
 
       // Disegna sul canvas
@@ -191,6 +197,7 @@ export function ScaraSimulation2d(props: Props) {
           ctx,
           gcodeParsed[gcodeCount][0],
           gcodeParsed[gcodeCount][1],
+          gcodeParsed[gcodeCount][2],
           'red',
         );
         gcodeCount++;
@@ -218,22 +225,24 @@ export function ScaraSimulation2d(props: Props) {
       <header className={styles.box_header}>
         <h1>Simulazione 2D</h1>
       </header>
-      <section className={styles.box_canvas}>
-        <TransformWrapper>
-          <TransformComponent>
-            <canvas id="canvas" ref={canvasRef} />
-          </TransformComponent>
-        </TransformWrapper>
-      </section>
-      <section style={{ display: 'flex' }}>
-        opzioni
-        <pre style={{ width: '50%', height: '150px', overflowY: 'scroll' }}>
-          {gcodeContent}
-        </pre>
-        <pre style={{ width: '50%', height: '150px', overflowY: 'scroll' }}>
-          {gcode}
-        </pre>
-      </section>
+      <div className={styles.box_body}>
+        <section className={styles.box_canvas}>
+          <TransformWrapper>
+            <TransformComponent>
+              <canvas id="canvas" ref={canvasRef} />
+            </TransformComponent>
+          </TransformWrapper>
+        </section>
+        <section className={styles.box_option}>
+          opzioni
+          <pre style={{ width: '50%', height: '150px', overflowY: 'scroll' }}>
+            {/* {gcodeContent} */}
+          </pre>
+          <pre style={{ width: '50%', height: '150px', overflowY: 'scroll' }}>
+            {/* {gcode} */}
+          </pre>
+        </section>
+      </div>
     </MainContainer>
   );
 }

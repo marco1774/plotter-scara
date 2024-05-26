@@ -1,3 +1,5 @@
+import { PathTypes } from './scaraSimulation2d.types';
+
 /* eslint-disable no-plusplus */
 export function canvasConfig(canvasRef: { current: HTMLCanvasElement }) {
   const canvas = canvasRef.current as HTMLCanvasElement;
@@ -121,8 +123,7 @@ export function drawAndMoveSecondArm(
 
 export function drawGCodePath(
   ctx: CanvasRenderingContext2D,
-  path: string | any[],
-
+  path: PathTypes[],
   DRAW_GCODE_PATH_LINE_WIDTH: number,
 ) {
   if (ctx == null) return;
@@ -131,7 +132,7 @@ export function drawGCodePath(
   for (let i = 1; i < path.length; i++) {
     ctx.beginPath();
     ctx.lineWidth = DRAW_GCODE_PATH_LINE_WIDTH;
-    ctx.strokeStyle = path[i].color;
+    ctx.strokeStyle = path[i].canDraw ? path[i].color : 'rgb(47 202 20 / 0%)';
     ctx.moveTo(path[i - 1].x, path[i - 1].y);
     ctx.lineTo(path[i].x, path[i].y);
     ctx.stroke();
@@ -185,7 +186,7 @@ export function effectorPoint(
   ctx.beginPath();
   ctx.arc(x - OFFSET_EFFECTOR_X, y, 1, 0, 2 * Math.PI);
   ctx.strokeStyle = 'yellow';
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 2;
   ctx.stroke();
   ctx.restore();
   ctx.closePath();
