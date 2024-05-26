@@ -71,29 +71,23 @@ export function ScaraSimulation2d(props: Props) {
   const [gcodeContent, setGcodeContent] = React.useState('');
   const [gcodeParsed, setGcodeParsed] = React.useState<any>([]);
   React.useEffect(() => {
-    window.electron.ipcRenderer.on('gcode:load', (gcodeTxt: any) => {
+    const handleGcodeLoad = (gcodeTxt: any) => {
+      console.log('passato gcode');
       setGcodeContent(gcodeTxt);
-    });
-    // const parsedGcodeSplitToLines = gcodeContent.split(/\r?\n/);
-    // const gcode = parsedGcodeSplitToLines
-    //   .filter(
-    //     (line) =>
-    //       line.startsWith('G1') &&
-    //       line.includes('X') &&
-    //       line.includes('Y') &&
-    //       line.includes('E'),
-    //   )
-    //   .map((line) => {
-    //     const analizedLine = line.split(' ');
-    //     return [+analizedLine[1].slice(1), +analizedLine[2].slice(1), true];
-    //   });
-    // setGcodeParsed(gcode);
-    // // Cleanup listener on component unmount
-    // return () => {
-    //   window.electron.ipcRenderer.removeListener('gcode:load');
-    // };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    };
+
+    // Subscribe al canale 'gcode:load'
+    const unsubscribe = window.electron.ipcRenderer.on(
+      'gcode:load',
+      handleGcodeLoad,
+    );
+
+    // Pulizia listener su component unmount
+    return () => {
+      unsubscribe();
+    };
   }, []);
+
   React.useEffect(() => {
     const parsedGcodeSplitToLines = gcodeContent.split(/\r?\n/);
     const gcode = parsedGcodeSplitToLines
