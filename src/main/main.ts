@@ -9,11 +9,14 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+// eslint-disable-next-line import/no-cycle
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+
+const fs = require('fs');
 
 class AppUpdater {
   constructor() {
@@ -30,6 +33,7 @@ ipcMain.on('ipc-example', async (event, arg) => {
   console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
 });
+
 ipcMain.on('ipc-prova', async (event, arg) => {
   console.log(arg);
 });
@@ -49,7 +53,7 @@ if (isDebug) {
 const installExtensions = async () => {
   const installer = require('electron-devtools-installer');
   const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS'];
+  const extensions = []; //  ['REACT_DEVELOPER_TOOLS'];
 
   return installer
     .default(
@@ -139,3 +143,24 @@ app
     });
   })
   .catch(console.log);
+
+// open gcode file
+export function openGcodeFile() {
+  if (!mainWindow) return;
+  const fileSelected = dialog.showOpenDialogSync(mainWindow, {
+    properties: ['openFile'],
+    filters: [{ name: 'gcode', extensions: ['gcode', 'txt'] }],
+  });
+  if (!fileSelected) return;
+  // console.log('fileSelected', fileSelected[0]);
+  const gcode: string = fs.readFileSync(fileSelected[0]).toString();
+  // console.log('fileSelected:gcode', gcode);
+  // gcode.split(/\r?\n/).forEach((line) => {
+  //   console.log(`Line from file: ${line}`);
+  // });
+  // const used = process.memoryUsage().heapUsed / 1024 / 1024;
+  // console.log(
+  //   `The script uses approximately ${Math.round(used * 100) / 100} MB`,
+  // );
+  mainWindow.webContents.send('gcode:load', gcode);
+}

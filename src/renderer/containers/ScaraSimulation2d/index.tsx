@@ -31,7 +31,7 @@ export function ScaraSimulation2d(props: Props) {
   // Modifica la scala del canvas
   const SCALA = 2;
   // Modifica la velocità dell'animazione
-  const FPS = 10;
+  const FPS = 60;
   // Il braccio è ancorato all'origine 0,0, questo aggiunge un offset in X
   const OFFSET_ORIGIN_X = 0;
   // Lunghezza primo braccio
@@ -44,7 +44,7 @@ export function ScaraSimulation2d(props: Props) {
   // Colore di backgraund del canvas
   const CANVAS_BG_COLOR = '#f4f4f4';
   // Spessore della linea di disegno del path
-  const DRAW_GCODE_PATH_LINE_WIDTH = 1;
+  const DRAW_GCODE_PATH_LINE_WIDTH = 0.2;
   // Canvas height
   const canvasHeight = TOTAL_ARMS_LENGTH * SCALA * 1.6;
   // Canvas width
@@ -60,12 +60,55 @@ export function ScaraSimulation2d(props: Props) {
   // Spessore linea arm
   const LINE_WIDTH_ARM = 10;
 
-  const gcode = [
-    [0, 20],
-    [20, 20],
-    [20, 0],
-    [0, 0],
-  ];
+  // const gcode = [
+  //   [0, 20],
+  //   [20, 20],
+  //   [20, 0],
+  //   [0, 0],
+  // ];
+
+  const [gcodeContent, setGcodeContent] = React.useState('');
+  const [gcodeParsed, setGcodeParsed] = React.useState<any>([]);
+  React.useEffect(() => {
+    window.electron.ipcRenderer.on('gcode:load', (gcodeTxt: any) => {
+      setGcodeContent(gcodeTxt);
+    });
+    // const parsedGcodeSplitToLines = gcodeContent.split(/\r?\n/);
+    // const gcode = parsedGcodeSplitToLines
+    //   .filter(
+    //     (line) =>
+    //       line.startsWith('G1') &&
+    //       line.includes('X') &&
+    //       line.includes('Y') &&
+    //       line.includes('E'),
+    //   )
+    //   .map((line) => {
+    //     const analizedLine = line.split(' ');
+    //     return [+analizedLine[1].slice(1), +analizedLine[2].slice(1), true];
+    //   });
+    // setGcodeParsed(gcode);
+    // // Cleanup listener on component unmount
+    // return () => {
+    //   window.electron.ipcRenderer.removeListener('gcode:load');
+    // };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  React.useEffect(() => {
+    const parsedGcodeSplitToLines = gcodeContent.split(/\r?\n/);
+    const gcode = parsedGcodeSplitToLines
+      .filter(
+        (line) =>
+          line.startsWith('G1') &&
+          line.includes('X') &&
+          line.includes('Y') &&
+          line.includes('E'),
+      )
+      .map((line) => {
+        const analizedLine = line.split(' ');
+        return [+analizedLine[1].slice(1), +analizedLine[2].slice(1), true];
+      });
+    setGcodeParsed(gcode);
+  }, [gcodeContent]);
 
   React.useEffect(() => {
     // canvas config
@@ -75,9 +118,7 @@ export function ScaraSimulation2d(props: Props) {
     canvas.style.backgroundColor = CANVAS_BG_COLOR;
     const ctx = canvas.getContext('2d');
     if (canvas == null || ctx == null) return;
-    let path = [] as { x: any; y: any; color: any }[];
-    let gcodeCount = 0;
-
+    const path = [] as { x: any; y: any; color: any }[];
     /*
      * sposta le coordinate dell'origine al centro del canvas
      * inverte direzione asse Y
@@ -143,12 +184,20 @@ export function ScaraSimulation2d(props: Props) {
     // Disegna l'area massima rettangolare inscritta nel cerchio
     maxWorkingArea(ctx, start, TOTAL_ARMS_LENGTH, OFFSET_EFFECTOR_X);
     let myTimeout: any;
+    let gcodeCount: number = 0;
     const animateCallback = (animate) => {
-      if (gcodeCount >= gcode.length) {
-        path = [];
+      if (gcodeCount >= gcodeParsed.length) {
+        // path = [];
+        // gcodeCount = 0;
       } else {
         if (ctx == null) return;
-        start(ctx, gcode[gcodeCount][0], gcode[gcodeCount][1], 'cyan');
+
+        start(
+          ctx,
+          gcodeParsed[gcodeCount][0],
+          gcodeParsed[gcodeCount][1],
+          'red',
+        );
         gcodeCount++;
       }
       requestAnimationFrame(animate);
@@ -167,7 +216,7 @@ export function ScaraSimulation2d(props: Props) {
       clearTimeout(myTimeout);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [gcodeParsed]);
 
   return (
     <MainContainer>
@@ -177,7 +226,15 @@ export function ScaraSimulation2d(props: Props) {
       <section className={styles.box_canvas}>
         <canvas id="canvas" ref={canvasRef} />
       </section>
-      <section>opzioni</section>
+      <section style={{ display: 'flex' }}>
+        opzioni
+        <pre style={{ width: '50%', height: '150px', overflowY: 'scroll' }}>
+          {gcodeContent}
+        </pre>
+        <pre style={{ width: '50%', height: '150px', overflowY: 'scroll' }}>
+          {gcode}
+        </pre>
+      </section>
     </MainContainer>
   );
 }
