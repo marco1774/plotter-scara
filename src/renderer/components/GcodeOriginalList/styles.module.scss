@@ -1,0 +1,8 @@
+@import '../../sharedCSS/option_radius_border';
+.box_gcode_list {
+  height: 100%;
+  width: 100%;
+  flex: 0 1 auto;
+  @extend .option;
+  @extend .box_radius_and_border;
+}

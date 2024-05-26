@@ -1,3 +1,5 @@
+@import '../../sharedCSS/option_radius_border';
+
 .box_header {
   h1 {
     margin-left: 20px;
@@ -20,26 +22,10 @@
     canvas {
       @extend .box_radius_and_border;
     }
-    .box_gcode_list {
-      height: 100%;
-      width: 100%;
-      flex: 0 1 auto;
-      @extend .option;
-      @extend .box_radius_and_border;
-    }
   }
   .box_option {
     flex: 1 1 100%;
     @extend .option;
     @extend .box_radius_and_border;
   }
-}
-
-.box_radius_and_border {
-  border-radius: 15px;
-}
-
-.option {
-  background-color: var(--bg-200);
-  padding: 10px;
 }
