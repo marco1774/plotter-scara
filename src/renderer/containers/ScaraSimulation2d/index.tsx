@@ -232,6 +232,7 @@ export function ScaraSimulation2d(props: Props) {
               <canvas id="canvas" ref={canvasRef} />
             </TransformComponent>
           </TransformWrapper>
+          <div className={styles.box_gcode_list}>list gcode</div>
         </section>
         <section className={styles.box_option}>
           opzioni

@@ -1,5 +1,5 @@
 .mainContainer {
-  height: 100vh;
+  height: 1080px;
   max-width: 1920px;
   min-width: 1024px;
   margin: 0 auto;
@@ -7,4 +7,6 @@
   padding: 15px;
   color: var(--text-100);
   background-color: var(--bg-100);
+  display: flex;
+  flex-direction: column;
 }
