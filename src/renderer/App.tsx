@@ -5,11 +5,13 @@ import { ScaraSimulation2d } from './containers/ScaraSimulation2d';
 
 export default function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/simulation2d" element={<ScaraSimulation2d />} />
-      </Routes>
-    </Router>
+    <div data-theme="light">
+      <Router>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/simulation2d" element={<ScaraSimulation2d />} />
+        </Routes>
+      </Router>
+    </div>
   );
 }

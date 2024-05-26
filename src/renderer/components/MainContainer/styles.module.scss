@@ -1,6 +1,8 @@
 .mainContainer {
   height: 100vh;
-  width: 100vw;
+  width: 1920px;
+  min-width: 1024px;
+  overflow-y: auto;
   padding: 15px;
   color: var(--text-100);
   background-color: var(--bg-100);
