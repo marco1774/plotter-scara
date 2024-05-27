@@ -2,7 +2,8 @@
 .box_gcode_list {
   height: 100%;
   width: 100%;
-  flex: 0 1 auto;
+  flex: 0 1 100%;
+  overflow-x: scroll;
   @extend .option;
   @extend .box_radius_and_border;
 }

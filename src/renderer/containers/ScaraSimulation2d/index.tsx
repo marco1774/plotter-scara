@@ -24,7 +24,7 @@ import { MainContainer } from '../../components/MainContainer';
 
 import styles from './styles.module.scss';
 import { PathTypes } from './scaraUtils/scaraSimulation2d.types';
-import GcodeOriginalList from '../../components/GcodeOriginalList';
+import GcodeList from '../../components/GcodeList';
 import SimulationOptions from '../../components/SimulationOptions';
 
 interface Props {}
@@ -234,7 +234,7 @@ export function ScaraSimulation2d(props: Props) {
               <canvas id="canvas" ref={canvasRef} />
             </TransformComponent>
           </TransformWrapper>
-          <GcodeOriginalList />
+          <GcodeList originalGcodeList={gcodeContent} />
         </section>
         <section className={styles.box_option}>
           <SimulationOptions />
