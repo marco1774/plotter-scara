@@ -13,10 +13,13 @@ import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 // eslint-disable-next-line import/no-cycle
+import { ReadlineParser } from 'serialport';
+// eslint-disable-next-line import/no-cycle
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 
 const fs = require('fs');
+const { SerialPort } = require('serialport');
 
 class AppUpdater {
   constructor() {
@@ -27,6 +30,22 @@ class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
+
+SerialPort.list()
+  .then((ports: any) => {
+    console.log('ports', ports);
+    const port = new SerialPort({
+      path: ports.find((com) => com.productId === '0043').path,
+      baudRate: 115200,
+    });
+    const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
+    parser.on('data', (data) => {
+      console.log('data', data);
+      if (!mainWindow) return;
+      mainWindow.webContents.send('arduino-serial-data', data);
+    });
+  })
+  .catch(console.log);
 
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;

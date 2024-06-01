@@ -18,6 +18,7 @@ import {
   clearCanvas,
   effectorPoint,
   maxWorkingArea,
+  inverseKinematicsSolver,
 } from './scaraUtils';
 import { gcode } from './scaraUtils/gcodeProva';
 import { MainContainer } from '../../components/MainContainer';
@@ -26,6 +27,9 @@ import styles from './styles.module.scss';
 import { PathTypes } from './scaraUtils/scaraSimulation2d.types';
 import GcodeList from '../../components/GcodeList';
 import SimulationOptions from '../../components/SimulationOptions';
+import { useLoadGcodeContent } from './hooks/useLoadGcodeContent';
+import { useParseGcodeContent } from './hooks/useParseGcodeContent';
+import { Button } from '../../components/Button';
 
 interface Props {}
 
@@ -71,46 +75,11 @@ export function ScaraSimulation2d(props: Props) {
   //   [0, 0],
   // ];
 
-  const [gcodeContent, setGcodeContent] = React.useState('');
-  const [gcodeParsed, setGcodeParsed] = React.useState<any>([]);
-  React.useEffect(() => {
-    const handleGcodeLoad = (gcodeTxt: any) => {
-      console.log('passato gcode');
-      setGcodeContent(gcodeTxt);
-    };
+  // Riceve il Gcode caricato e lo espone come una stringa
+  const { gcodeContent } = useLoadGcodeContent();
 
-    // Subscribe al canale 'gcode:load'
-    const unsubscribe = window.electron.ipcRenderer.on(
-      'gcode:load',
-      handleGcodeLoad,
-    );
-
-    // Pulizia listener su component unmount
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
-  React.useEffect(() => {
-    const parsedGcodeSplitToLines = gcodeContent.split(/\r?\n/);
-    const gcode = parsedGcodeSplitToLines
-      .filter((line) => {
-        return line.startsWith('G1') || line.startsWith('G01');
-      })
-      .map((line) => {
-        if (line.includes('E') && line.includes('X') && line.includes('Y')) {
-          const analizedLine = line.split(' ');
-          return [+analizedLine[1].slice(1), +analizedLine[2].slice(1), true];
-        }
-        if (line.includes('F') && line.includes('X') && line.includes('Y')) {
-          const analizedLine = line.split(' ');
-          return [+analizedLine[1].slice(1), +analizedLine[2].slice(1), false];
-        }
-        return ['no'];
-      })
-      .filter((line) => line[0] !== 'no');
-    setGcodeParsed(gcode);
-  }, [gcodeContent]);
+  // Prende il Gcode e lo trasforma per usarlo
+  const { gcodeParsed } = useParseGcodeContent({ gcodeContent });
 
   React.useEffect(() => {
     // canvas config
@@ -121,25 +90,30 @@ export function ScaraSimulation2d(props: Props) {
     const ctx = canvas.getContext('2d');
     if (canvas == null || ctx == null) return;
     const path = [] as PathTypes[];
+    console.log('🚀 ~ React.useEffect ~ path:', path);
     /*
      * sposta le coordinate dell'origine al centro del canvas
      * inverte direzione asse Y
      */
     centerOriginAndFlipYAxis(ctx, canvas, OFFSET_CARTESIAN_PLANE_AXIS_Y, SCALA);
 
-    function start(ctx, x, y, canDraw, DRAW_GCODE_PATH_COLOR = 'purple') {
+    function start(
+      ctx: any,
+      x: number,
+      y: number,
+      canDraw: boolean,
+      gcodePathColor: string,
+    ) {
       // inverse kinematics solver
-      const [tetha1, tetha2] = XYToAngle(
-        x - OFFSET_EFFECTOR_X,
-        y,
-        FIRST_ARM_LENGTH,
-        SECOND_ARM_LENGTH,
-      );
-
-      const ang = tetha1 * (Math.PI / 180); // gradi in radianti
-      const FIRST_ARM_X = Math.sin(ang) * FIRST_ARM_LENGTH + OFFSET_ORIGIN_X;
-      const FIRST_ARM_Y = Math.cos(ang) * FIRST_ARM_LENGTH;
-      const ang1 = tetha2 * (Math.PI / 180);
+      const { FIRST_ARM_X, FIRST_ARM_Y, angElbow, angShoulder } =
+        inverseKinematicsSolver(
+          x,
+          y,
+          FIRST_ARM_LENGTH,
+          SECOND_ARM_LENGTH,
+          OFFSET_EFFECTOR_X,
+          OFFSET_ORIGIN_X,
+        );
 
       // Pulisce il canvas ad ogni frame
       clearCanvas(ctx, canvas);
@@ -160,8 +134,8 @@ export function ScaraSimulation2d(props: Props) {
       // Disegna e muove il secondo braccio
       const { secondArmEndX, secondArmEndY } = drawAndMoveSecondArm(
         ctx,
-        ang,
-        ang1,
+        angShoulder,
+        angElbow,
         FIRST_ARM_X,
         FIRST_ARM_Y,
         SECOND_ARM_LENGTH,
@@ -172,29 +146,30 @@ export function ScaraSimulation2d(props: Props) {
       path.push({
         x: secondArmEndX,
         y: secondArmEndY,
-        color: DRAW_GCODE_PATH_COLOR,
+        color: gcodePathColor,
         canDraw,
       });
 
       // Disegna sul canvas
       drawGCodePath(ctx, path, DRAW_GCODE_PATH_LINE_WIDTH);
 
-      // Individua il punto effector
+      // Sposta il punto effector
       effectorPoint(ctx, x, y, OFFSET_EFFECTOR_X);
     }
 
     // Disegna la semi circonferenza massima che il braccio può disegnare
     // Disegna l'area massima rettangolare inscritta nel cerchio
     maxWorkingArea(ctx, start, TOTAL_ARMS_LENGTH, OFFSET_EFFECTOR_X);
+
     let myTimeout: any;
     let gcodeCount: number = 0;
+
     const animateCallback = (animate) => {
       if (gcodeCount >= gcodeParsed.length) {
         // path = [];
         // gcodeCount = 0;
       } else {
         if (ctx == null) return;
-
         start(
           ctx,
           gcodeParsed[gcodeCount][0],
@@ -206,10 +181,11 @@ export function ScaraSimulation2d(props: Props) {
       }
       requestAnimationFrame(animate);
     };
+
     function animate() {
-      myTimeout = setTimeout(() => {
-        animateCallback(animate);
-      }, 1000 / FPS);
+      // myTimeout = setTimeout(() => {
+      animateCallback(animate);
+      // }, 1000 / FPS);
     }
 
     animate();
@@ -237,6 +213,21 @@ export function ScaraSimulation2d(props: Props) {
           <GcodeList originalGcodeList={gcodeContent} />
         </section>
         <section className={styles.box_option}>
+          {/* <Button variant="contained" onclick={handleStart}>
+            Start
+          </Button>
+          <Button variant="contained" onclick={handlePause}>
+            Pause
+          </Button>
+          <Button variant="contained" onclick={handleResume}>
+            Resume
+          </Button>
+          <Button variant="contained" onclick={handleStop}>
+            Stop
+          </Button>
+          <Button variant="contained" onclick={handleStep}>
+            Step by step
+          </Button> */}
           <SimulationOptions />
         </section>
       </div>

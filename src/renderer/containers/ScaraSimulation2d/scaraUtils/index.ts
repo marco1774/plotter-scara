@@ -94,8 +94,8 @@ export function drawAndMoveFirstArm(
 
 export function drawAndMoveSecondArm(
   ctx: CanvasRenderingContext2D,
-  angle1: number,
-  angle2: number,
+  angShoulder: number,
+  angElbow: number,
   firstArmEndX: number,
   firstArmEndY: number,
   SECOND_ARM_LENGTH: number,
@@ -107,9 +107,9 @@ export function drawAndMoveSecondArm(
   ctx.beginPath();
   ctx.moveTo(firstArmEndX, firstArmEndY);
   const secondArmEndX =
-    firstArmEndX + Math.sin(angle1 + angle2) * SECOND_ARM_LENGTH;
+    firstArmEndX + Math.sin(angShoulder + angElbow) * SECOND_ARM_LENGTH;
   const secondArmEndY =
-    firstArmEndY + Math.cos(angle1 + angle2) * SECOND_ARM_LENGTH;
+    firstArmEndY + Math.cos(angShoulder + angElbow) * SECOND_ARM_LENGTH;
   ctx.lineTo(secondArmEndX, secondArmEndY);
   ctx.strokeStyle = 'green';
   ctx.lineWidth = LINE_WIDTH_ARM;
@@ -206,6 +206,7 @@ export function maxWorkingArea(
       Math.sin(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
         OFFSET_EFFECTOR_X,
       Math.cos(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+      true,
       'red',
     );
   }
@@ -214,6 +215,7 @@ export function maxWorkingArea(
       ctx,
       Math.sin(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
       Math.cos(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+      true,
       'blue',
     );
   }
@@ -229,18 +231,21 @@ export function maxWorkingArea(
     ctx,
     Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
     Math.cos(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+    true,
     'yellow',
   );
   start(
     ctx,
     Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
     Math.cos(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+    true,
     'yellow',
   );
   start(
     ctx,
     Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
     0,
+    true,
     'yellow',
   );
 
@@ -248,7 +253,37 @@ export function maxWorkingArea(
     ctx,
     Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
     0,
+    true,
     'yellow',
   );
   // **************************************************************
+}
+
+export function inverseKinematicsSolver(
+  x,
+  y,
+  FIRST_ARM_LENGTH,
+  SECOND_ARM_LENGTH,
+  OFFSET_EFFECTOR_X,
+  OFFSET_ORIGIN_X,
+) {
+  const [tetha1, tetha2] = XYToAngle(
+    x - OFFSET_EFFECTOR_X,
+    y,
+    FIRST_ARM_LENGTH,
+    SECOND_ARM_LENGTH,
+  );
+
+  const angShoulder = tetha1 * (Math.PI / 180); // gradi in radianti
+  const FIRST_ARM_X =
+    Math.sin(angShoulder) * FIRST_ARM_LENGTH + OFFSET_ORIGIN_X;
+  const FIRST_ARM_Y = Math.cos(angShoulder) * FIRST_ARM_LENGTH;
+  const angElbow = tetha2 * (Math.PI / 180); // gradi in radianti
+
+  return {
+    FIRST_ARM_X,
+    FIRST_ARM_Y,
+    angElbow,
+    angShoulder,
+  };
 }
