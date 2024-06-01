@@ -6,6 +6,22 @@
  * ScaraSimulation2d
  *
  */
+/*
+1. **Ciclo `while` + `await new Promise((resolve) => setTimeout(resolve, 0))`**:
+   - **Motivo**: Il ciclo `while` esegue iterazioni rapide e potrebbe bloccare il thread principale,
+   impedendo a React di aggiornare lo stato e l'interfaccia utente.
+   - **Soluzione**: Inserire una pausa asincrona tra le iterazioni con `await new Promise((resolve) => setTimeout(resolve, 0))`
+   permette a React di processare gli aggiornamenti dello stato e rendere i cambiamenti, evitando un blocco continuo.
+
+2. **`setInterval`**:
+   - **Motivo**: Invece di eseguire tutte le iterazioni in rapida successione, `setInterval` esegue il codice a intervalli regolari,
+   permettendo a React di aggiornare lo stato tra un'esecuzione e l'altra.
+   - **Soluzione**: Utilizzare `setInterval` per aggiungere una nuova linea a `gCodeLineByLine` a intervalli regolari (es. ogni 100 millisecondi),
+   consente a React di mantenere l'interfaccia utente aggiornata senza blocchi.
+
+- **Ciclo `while` + Pausa Asincrona**: Previene il blocco continuo del ciclo `while`, permettendo a React di aggiornare lo stato.
+- **`setInterval`**: Esegue aggiornamenti a intervalli regolari, permettendo a React di mantenere l'interfaccia utente aggiornata senza blocchi.
+*/
 import * as React from 'react';
 import { TransformComponent, TransformWrapper } from 'react-zoom-pan-pinch';
 import {
@@ -76,11 +92,86 @@ export function ScaraSimulation2d(props: Props) {
   // ];
 
   // Riceve il Gcode caricato e lo espone come una stringa
+  // const { gcodeContent } = useLoadGcodeContent();
+  // const gcodeSplitedByLineRef = React.useRef<string[]>([]);
+  // const [gCodeLineByLine, setGcodeLineByLine] = React.useState<string[]>([]);
+  // // eslint-disable-next-line prefer-const
+  // let indexGcode = React.useRef(0);
+
+  // console.log(
+  //   '🚀 ~ ScaraSimulation2d ~ gcodeSplitedByLine:',
+  //   gcodeSplitedByLineRef.current,
+  // );
+  // console.log('🚀 ~ ScaraSimulation2d ~ gCodeLineByLine:', gCodeLineByLine);
+
+  // React.useEffect(() => {
+  //   if (!gcodeContent) return;
+  //   gcodeSplitedByLineRef.current = gcodeContent.length
+  //     ? gcodeContent.split(/\r?\n/)
+  //     : [];
+  // }, [gcodeContent]);
+
+  // React.useEffect(() => {
+  //   if (gcodeSplitedByLineRef.current.length > 0) {
+  //     const processLines = async () => {
+  //       while (indexGcode.current < gcodeSplitedByLineRef.current.length) {
+  //         setGcodeLineByLine((prevState) => [
+  //           ...prevState,
+  //           gcodeSplitedByLineRef.current[indexGcode.current],
+  //         ]);
+  //         indexGcode.current++;
+  //         // eslint-disable-next-line no-await-in-loop, no-promise-executor-return
+  //         await new Promise((resolve) => setTimeout(resolve, 0)); // permette a React di aggiornare lo stato
+  //       }
+  //     };
+
+  //     processLines();
+  //   }
+  // }, [gcodeContent]); // Usa gcodeContent come dipendenza per innescare l'effetto quando il contenuto cambia
   const { gcodeContent } = useLoadGcodeContent();
+  const gcodeSplitedByLineRef = React.useRef<string[]>([]);
+  const [gCodeLineByLine, setGcodeLineByLine] = React.useState<string>('');
+  const indexGcode = React.useRef(0);
+
+  // console.log(gCodeLineByLine, typeof gCodeLineByLine);
+
+  React.useEffect(() => {
+    gcodeSplitedByLineRef.current = gcodeContent.split(/\r?\n/);
+    indexGcode.current = 0; // Reset the index when gcodeContent changes
+  }, [gcodeContent]);
+
+  // eslint-disable-next-line consistent-return
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      if (indexGcode.current < gcodeSplitedByLineRef.current.length) {
+        setGcodeLineByLine((prevState) => {
+          return gcodeSplitedByLineRef.current[indexGcode.current];
+          /* return [
+              ...prevState,
+              gcodeSplitedByLineRef.current[indexGcode.current]
+            ]; */
+        });
+        indexGcode.current++;
+      } else {
+        clearInterval(interval);
+      }
+    }, 1); // Adjust the interval as needed
+
+    return () => clearInterval(interval); // Clean up the interval on component unmount or update
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gcodeSplitedByLineRef.current]); // Use gcodeContent as a dependency to trigger the effect when the content changes
 
   // Prende il Gcode e lo trasforma per usarlo
-  const { gcodeParsed } = useParseGcodeContent({ gcodeContent });
+  const { gcodeParsed } = useParseGcodeContent({ gCodeLineByLine });
+  // console.log(
+  //   '🚀 ~ ScaraSimulation2d ~ gcodeParsed:',
+  //   gcodeParsed,
+  //   typeof gcodeParsed,
+  // );
 
+  const path = React.useRef<PathTypes[]>([]);
+  // console.log('🚀 ~ React.useEffect ~ path:', path.current);
   React.useEffect(() => {
     // canvas config
     const canvas = canvasRef.current as HTMLCanvasElement;
@@ -89,8 +180,6 @@ export function ScaraSimulation2d(props: Props) {
     canvas.style.backgroundColor = CANVAS_BG_COLOR;
     const ctx = canvas.getContext('2d');
     if (canvas == null || ctx == null) return;
-    const path = [] as PathTypes[];
-    console.log('🚀 ~ React.useEffect ~ path:', path);
     /*
      * sposta le coordinate dell'origine al centro del canvas
      * inverte direzione asse Y
@@ -143,7 +232,7 @@ export function ScaraSimulation2d(props: Props) {
       );
 
       // Aggiungi la posizione dell'effettore al percorso
-      path.push({
+      path.current.push({
         x: secondArmEndX,
         y: secondArmEndY,
         color: gcodePathColor,
@@ -151,7 +240,7 @@ export function ScaraSimulation2d(props: Props) {
       });
 
       // Disegna sul canvas
-      drawGCodePath(ctx, path, DRAW_GCODE_PATH_LINE_WIDTH);
+      drawGCodePath(ctx, path.current, DRAW_GCODE_PATH_LINE_WIDTH);
 
       // Sposta il punto effector
       effectorPoint(ctx, x, y, OFFSET_EFFECTOR_X);
@@ -162,23 +251,24 @@ export function ScaraSimulation2d(props: Props) {
     maxWorkingArea(ctx, start, TOTAL_ARMS_LENGTH, OFFSET_EFFECTOR_X);
 
     let myTimeout: any;
-    let gcodeCount: number = 0;
+    const gcodeCount: number = 0;
 
     const animateCallback = (animate) => {
-      if (gcodeCount >= gcodeParsed.length) {
-        // path = [];
-        // gcodeCount = 0;
-      } else {
-        if (ctx == null) return;
-        start(
-          ctx,
-          gcodeParsed[gcodeCount][0],
-          gcodeParsed[gcodeCount][1],
-          gcodeParsed[gcodeCount][2],
-          'red',
-        );
-        gcodeCount++;
-      }
+      if (!gcodeParsed.length) return;
+      // if (gcodeCount >= gcodeParsed.length) {
+      // path = [];
+      // gcodeCount = 0;
+      // } else {
+      if (ctx == null) return;
+      start(
+        ctx,
+        gcodeParsed[0][0],
+        gcodeParsed[0][1],
+        gcodeParsed[0][2],
+        'red',
+      );
+      //   gcodeCount++;
+      // }
       requestAnimationFrame(animate);
     };
 
