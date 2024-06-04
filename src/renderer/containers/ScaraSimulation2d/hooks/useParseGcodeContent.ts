@@ -1,25 +1,21 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from 'react';
 
-export function useParseGcodeContent({
-  gCodeLineByLine,
-}: {
-  gCodeLineByLine: string;
-}) {
+export function useParseGcodeContent({ gcodeContentString }) {
   const [gcodeParsed, setGcodeParsed] = React.useState<any>([]);
-  // console.log('🚀 ~ gcodeParsed:', gcodeParsed);
 
   React.useEffect(() => {
-    if (!gCodeLineByLine) return;
-    /*    const parsedGcodeSplitToLines = gcodeContent.length
-      ? gcodeContent.split(/\r?\n/)
-      : []; */
-    // let gcodecount = 0;
+    setGcodeParsed([]);
+    if (!gcodeContentString) return;
+    const parsedGcodeSplitToLines = gcodeContentString.split(/\r?\n/);
+
+    let gCodeIndex = 0;
 
     function parseGcodeLine(line) {
       if (line.includes('E') && line.includes('X') && line.includes('Y')) {
         const analyzedLine = line.split(' ');
         setGcodeParsed((prev) => [
-          // ...prev,
+          ...prev,
           [+analyzedLine[1].slice(1), +analyzedLine[2].slice(1), true],
         ]);
       } else if (
@@ -29,7 +25,7 @@ export function useParseGcodeContent({
       ) {
         const analyzedLine = line.split(' ');
         setGcodeParsed((prev) => [
-          // ...prev,
+          ...prev,
           [+analyzedLine[1].slice(1), +analyzedLine[2].slice(1), false],
         ]);
       } else {
@@ -38,20 +34,19 @@ export function useParseGcodeContent({
     }
 
     function startParseGcodeList() {
-      // while (gcodecount < parsedGcodeSplitToLines.length) {
-      const line = gCodeLineByLine;
-      if (line.startsWith('G1') || line.startsWith('G01')) {
-        parseGcodeLine(line);
+      while (gCodeIndex < parsedGcodeSplitToLines.length) {
+        const line = parsedGcodeSplitToLines[gCodeIndex];
+        if (line.startsWith('G1') || line.startsWith('G01')) {
+          parseGcodeLine(line);
+        } else {
+          setGcodeParsed((prev) => [...prev, line]);
+        }
+        gCodeIndex += 1;
       }
-      //  else {
-      //   setGcodeParsed((prev) => [...prev, line]);
-      // }
-      // // gcodecount += 1;
-      // // }
     }
 
     startParseGcodeList();
-  }, [gCodeLineByLine]);
+  }, [gcodeContentString]);
 
-  return { gcodeParsed };
+  return { gcodeParsed, setGcodeParsed };
 }

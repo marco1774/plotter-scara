@@ -1,12 +1,12 @@
 import React from 'react';
 
 export function useLoadGcodeContent() {
-  const [gcodeContent, setGcodeContent] = React.useState('');
+  const [gcodeContentString, setGcodeContentString] = React.useState('');
 
   React.useEffect(() => {
     const handleGcodeLoad = (gcodeTxt: any) => {
       console.log('passato gcode');
-      setGcodeContent(gcodeTxt);
+      setGcodeContentString(gcodeTxt);
     };
 
     // Subscribe al canale 'gcode:load'
@@ -21,5 +21,5 @@ export function useLoadGcodeContent() {
     };
   }, []);
 
-  return { gcodeContent };
+  return { gcodeContentString, setGcodeContentString };
 }

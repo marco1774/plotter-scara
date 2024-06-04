@@ -16,7 +16,7 @@
 2. **`setInterval`**:
    - **Motivo**: Invece di eseguire tutte le iterazioni in rapida successione, `setInterval` esegue il codice a intervalli regolari,
    permettendo a React di aggiornare lo stato tra un'esecuzione e l'altra.
-   - **Soluzione**: Utilizzare `setInterval` per aggiungere una nuova linea a `gCodeLineByLine` a intervalli regolari (es. ogni 100 millisecondi),
+   - **Soluzione**: Utilizzare `setInterval` per aggiungere una nuova linea a `gCodeLine` a intervalli regolari (es. ogni 100 millisecondi),
    consente a React di mantenere l'interfaccia utente aggiornata senza blocchi.
 
 - **Ciclo `while` + Pausa Asincrona**: Previene il blocco continuo del ciclo `while`, permettendo a React di aggiornare lo stato.
@@ -51,9 +51,10 @@ interface Props {}
 
 export function ScaraSimulation2d(props: Props) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const canvasPathRef = React.useRef<HTMLCanvasElement>(null);
 
   // Modifica la scala del canvas
-  const SCALA = 2;
+  const SCALA = 1.4;
   // Modifica la velocità dell'animazione
   const FPS = 60;
   // Il braccio è ancorato all'origine 0,0, questo aggiunge un offset in X
@@ -66,7 +67,7 @@ export function ScaraSimulation2d(props: Props) {
   // Lunghezza totale dei due bracci
   const TOTAL_ARMS_LENGTH = FIRST_ARM_LENGTH - 1 + (SECOND_ARM_LENGTH - 1);
   // Colore di backgraund del canvas
-  const CANVAS_BG_COLOR = '#f4f4f4';
+  const CANVAS_BG_COLOR = '#f4f4f400';
   // Spessore della linea di disegno del path
   const DRAW_GCODE_PATH_LINE_WIDTH = 0.6;
   // Canvas height
@@ -75,7 +76,7 @@ export function ScaraSimulation2d(props: Props) {
   const canvasWidth = TOTAL_ARMS_LENGTH * SCALA * 2 + 10;
   // L'origine del piano cartesiano 0,0 è impostato al centro del canvas, aggiunge un offset in Y
   const OFFSET_CARTESIAN_PLANE_AXIS_Y =
-    TOTAL_ARMS_LENGTH - TOTAL_ARMS_LENGTH * 0.2;
+    TOTAL_ARMS_LENGTH - TOTAL_ARMS_LENGTH * 0.5;
   // Distanza punti griglia piano cartesiano
   const GRID_POINTS_DISTANCE = 10;
   // L'origine dell'effector sarebbe 0,0 al centro dell'area di lavoro rettangolare in X,
@@ -83,6 +84,16 @@ export function ScaraSimulation2d(props: Props) {
   const OFFSET_EFFECTOR_X = TOTAL_ARMS_LENGTH * 0.707;
   // Spessore linea arm
   const LINE_WIDTH_ARM = 10;
+  let gcodeCount: number = 0;
+
+  const path = React.useRef<PathTypes[]>([
+    {
+      x: 0,
+      y: 0,
+      color: 'transparent',
+      canDraw: false,
+    },
+  ]);
 
   // const gcode = [
   //   [0, 20],
@@ -91,102 +102,56 @@ export function ScaraSimulation2d(props: Props) {
   //   [0, 0],
   // ];
 
-  // Riceve il Gcode caricato e lo espone come una stringa
-  // const { gcodeContent } = useLoadGcodeContent();
-  // const gcodeSplitedByLineRef = React.useRef<string[]>([]);
-  // const [gCodeLineByLine, setGcodeLineByLine] = React.useState<string[]>([]);
-  // // eslint-disable-next-line prefer-const
-  // let indexGcode = React.useRef(0);
+  /*
+  Prende il gcode caricato come stringa e lo espone in
+  */
+  const { gcodeContentString, setGcodeContentString } = useLoadGcodeContent();
 
-  // console.log(
-  //   '🚀 ~ ScaraSimulation2d ~ gcodeSplitedByLine:',
-  //   gcodeSplitedByLineRef.current,
-  // );
-  // console.log('🚀 ~ ScaraSimulation2d ~ gCodeLineByLine:', gCodeLineByLine);
-
-  // React.useEffect(() => {
-  //   if (!gcodeContent) return;
-  //   gcodeSplitedByLineRef.current = gcodeContent.length
-  //     ? gcodeContent.split(/\r?\n/)
-  //     : [];
-  // }, [gcodeContent]);
-
-  // React.useEffect(() => {
-  //   if (gcodeSplitedByLineRef.current.length > 0) {
-  //     const processLines = async () => {
-  //       while (indexGcode.current < gcodeSplitedByLineRef.current.length) {
-  //         setGcodeLineByLine((prevState) => [
-  //           ...prevState,
-  //           gcodeSplitedByLineRef.current[indexGcode.current],
-  //         ]);
-  //         indexGcode.current++;
-  //         // eslint-disable-next-line no-await-in-loop, no-promise-executor-return
-  //         await new Promise((resolve) => setTimeout(resolve, 0)); // permette a React di aggiornare lo stato
-  //       }
-  //     };
-
-  //     processLines();
-  //   }
-  // }, [gcodeContent]); // Usa gcodeContent come dipendenza per innescare l'effetto quando il contenuto cambia
-  const { gcodeContent } = useLoadGcodeContent();
-  const gcodeSplitedByLineRef = React.useRef<string[]>([]);
-  const [gCodeLineByLine, setGcodeLineByLine] = React.useState<string>('');
-  const indexGcode = React.useRef(0);
-
-  // console.log(gCodeLineByLine, typeof gCodeLineByLine);
+  // Prende la linea gcode per analizzarla
+  const { gcodeParsed, setGcodeParsed } = useParseGcodeContent({
+    gcodeContentString,
+  });
 
   React.useEffect(() => {
-    gcodeSplitedByLineRef.current = gcodeContent.split(/\r?\n/);
-    indexGcode.current = 0; // Reset the index when gcodeContent changes
-  }, [gcodeContent]);
-
-  // eslint-disable-next-line consistent-return
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      if (indexGcode.current < gcodeSplitedByLineRef.current.length) {
-        setGcodeLineByLine((prevState) => {
-          return gcodeSplitedByLineRef.current[indexGcode.current];
-          /* return [
-              ...prevState,
-              gcodeSplitedByLineRef.current[indexGcode.current]
-            ]; */
-        });
-        indexGcode.current++;
-      } else {
-        clearInterval(interval);
-      }
-    }, 1); // Adjust the interval as needed
-
-    return () => clearInterval(interval); // Clean up the interval on component unmount or update
-
+    // Resetta il contatore gcodeCount e il percorso
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gcodeSplitedByLineRef.current]); // Use gcodeContent as a dependency to trigger the effect when the content changes
+    gcodeCount = 0;
+    path.current = [
+      {
+        x: 0,
+        y: 0,
+        color: 'transparent',
+        canDraw: false,
+      },
+    ];
 
-  // Prende il Gcode e lo trasforma per usarlo
-  const { gcodeParsed } = useParseGcodeContent({ gCodeLineByLine });
-  // console.log(
-  //   '🚀 ~ ScaraSimulation2d ~ gcodeParsed:',
-  //   gcodeParsed,
-  //   typeof gcodeParsed,
-  // );
-
-  const path = React.useRef<PathTypes[]>([]);
-  // console.log('🚀 ~ React.useEffect ~ path:', path.current);
-  React.useEffect(() => {
     // canvas config
     const canvas = canvasRef.current as HTMLCanvasElement;
+    const canvasPath = canvasPathRef.current as HTMLCanvasElement;
     canvas.height = canvasHeight;
     canvas.width = canvasWidth;
+    canvasPath.height = canvasHeight;
+    canvasPath.width = canvasWidth;
     canvas.style.backgroundColor = CANVAS_BG_COLOR;
+    canvasPath.style.backgroundColor = '#fff';
     const ctx = canvas.getContext('2d');
+    const ctx2 = canvasPath.getContext('2d');
     if (canvas == null || ctx == null) return;
+    if (canvasPath == null || ctx2 == null) return;
     /*
      * sposta le coordinate dell'origine al centro del canvas
      * inverte direzione asse Y
      */
     centerOriginAndFlipYAxis(ctx, canvas, OFFSET_CARTESIAN_PLANE_AXIS_Y, SCALA);
+    centerOriginAndFlipYAxis(
+      ctx2,
+      canvas,
+      OFFSET_CARTESIAN_PLANE_AXIS_Y,
+      SCALA,
+    );
 
     function start(
+      ctx2: any,
       ctx: any,
       x: number,
       y: number,
@@ -205,14 +170,14 @@ export function ScaraSimulation2d(props: Props) {
         );
 
       // Pulisce il canvas ad ogni frame
-      clearCanvas(ctx, canvas);
+      clearCanvas(ctx2, canvas);
 
       // Disegna il piano cartesiano
       drawCartesianPlane(ctx, GRID_POINTS_DISTANCE);
 
       // Disegna e muove il primo braccio
       drawAndMoveFirstArm(
-        ctx,
+        ctx2,
         FIRST_ARM_X,
         FIRST_ARM_Y,
         OFFSET_ORIGIN_X,
@@ -222,7 +187,7 @@ export function ScaraSimulation2d(props: Props) {
 
       // Disegna e muove il secondo braccio
       const { secondArmEndX, secondArmEndY } = drawAndMoveSecondArm(
-        ctx,
+        ctx2,
         angShoulder,
         angElbow,
         FIRST_ARM_X,
@@ -232,43 +197,59 @@ export function ScaraSimulation2d(props: Props) {
       );
 
       // Aggiungi la posizione dell'effettore al percorso
-      path.current.push({
-        x: secondArmEndX,
-        y: secondArmEndY,
-        color: gcodePathColor,
-        canDraw,
-      });
+      if (path.current.length === 1) {
+        // siamo all'inizio
+        path.current.push({
+          x: secondArmEndX,
+          y: secondArmEndY,
+          color: gcodePathColor,
+          canDraw,
+        });
+      } else {
+        path.current.shift(); // rimuove primo elemento
+        path.current.push({
+          x: secondArmEndX,
+          y: secondArmEndY,
+          color: gcodePathColor,
+          canDraw,
+        });
+      }
 
       // Disegna sul canvas
       drawGCodePath(ctx, path.current, DRAW_GCODE_PATH_LINE_WIDTH);
 
       // Sposta il punto effector
-      effectorPoint(ctx, x, y, OFFSET_EFFECTOR_X);
+      effectorPoint(ctx2, x, y, OFFSET_EFFECTOR_X);
     }
 
     // Disegna la semi circonferenza massima che il braccio può disegnare
     // Disegna l'area massima rettangolare inscritta nel cerchio
-    maxWorkingArea(ctx, start, TOTAL_ARMS_LENGTH, OFFSET_EFFECTOR_X);
+    // maxWorkingArea(ctx2, ctx, start, TOTAL_ARMS_LENGTH, OFFSET_EFFECTOR_X);
 
     let myTimeout: any;
-    const gcodeCount: number = 0;
 
     const animateCallback = (animate) => {
       if (!gcodeParsed.length) return;
-      // if (gcodeCount >= gcodeParsed.length) {
-      // path = [];
-      // gcodeCount = 0;
-      // } else {
-      if (ctx == null) return;
-      start(
-        ctx,
-        gcodeParsed[0][0],
-        gcodeParsed[0][1],
-        gcodeParsed[0][2],
-        'red',
-      );
-      //   gcodeCount++;
-      // }
+      if (gcodeCount < gcodeParsed.length) {
+        if (ctx == null) return;
+        if (typeof gcodeParsed[gcodeCount] === 'string') {
+          gcodeCount++;
+          requestAnimationFrame(animate);
+          return;
+        }
+
+        start(
+          ctx2,
+          ctx,
+          gcodeParsed[gcodeCount][0],
+          gcodeParsed[gcodeCount][1],
+          gcodeParsed[gcodeCount][2],
+          'red',
+        );
+        gcodeCount++;
+      } else {
+        // gcodeCount = 0;
+      }
       requestAnimationFrame(animate);
     };
 
@@ -295,30 +276,18 @@ export function ScaraSimulation2d(props: Props) {
       </header>
       <div className={styles.box_body}>
         <section className={styles.box_canvas}>
-          <TransformWrapper>
+          {/* <div id="TransformWrapperCont"> */}
+          <TransformWrapper panning={{ disabled: false }}>
             <TransformComponent>
+              <canvas id="canvasPath" ref={canvasPathRef} />
               <canvas id="canvas" ref={canvasRef} />
             </TransformComponent>
           </TransformWrapper>
-          <GcodeList originalGcodeList={gcodeContent} />
+          {/* </div> */}
+          {/* <GcodeList originalGcodeList={gcodeContentString} /> */}
         </section>
         <section className={styles.box_option}>
-          {/* <Button variant="contained" onclick={handleStart}>
-            Start
-          </Button>
-          <Button variant="contained" onclick={handlePause}>
-            Pause
-          </Button>
-          <Button variant="contained" onclick={handleResume}>
-            Resume
-          </Button>
-          <Button variant="contained" onclick={handleStop}>
-            Stop
-          </Button>
-          <Button variant="contained" onclick={handleStep}>
-            Step by step
-          </Button> */}
-          <SimulationOptions />
+          {/* <SimulationOptions /> */}
         </section>
       </div>
     </MainContainer>

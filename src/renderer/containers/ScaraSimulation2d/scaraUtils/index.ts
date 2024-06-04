@@ -1,3 +1,4 @@
+/* eslint-disable no-use-before-define */
 import { PathTypes } from './scaraSimulation2d.types';
 
 /* eslint-disable no-plusplus */
@@ -122,21 +123,22 @@ export function drawAndMoveSecondArm(
 }
 
 export function drawGCodePath(
-  ctx: CanvasRenderingContext2D,
+  ctx2: CanvasRenderingContext2D,
   path: PathTypes[],
   DRAW_GCODE_PATH_LINE_WIDTH: number,
 ) {
-  if (ctx == null) return;
-
-  ctx.moveTo(path[0].x, path[0].y);
-  for (let i = 1; i < path.length; i++) {
-    ctx.beginPath();
-    ctx.lineWidth = DRAW_GCODE_PATH_LINE_WIDTH;
-    ctx.strokeStyle = path[i].canDraw ? path[i].color : 'rgb(47 202 20 / 0%)';
-    ctx.moveTo(path[i - 1].x, path[i - 1].y);
-    ctx.lineTo(path[i].x, path[i].y);
-    ctx.stroke();
-  }
+  if (ctx2 == null) return;
+  // ctx2.moveTo(path[0].x, path[0].y);
+  // for (let i = 1; i < path.length; i++) {
+  ctx2.beginPath();
+  ctx2.lineWidth = DRAW_GCODE_PATH_LINE_WIDTH;
+  ctx2.strokeStyle = path[path.length - 1].canDraw
+    ? path[path.length - 1].color
+    : 'rgb(47 202 20 / 0%)';
+  ctx2.moveTo(path[path.length - 2].x, path[path.length - 2].y);
+  ctx2.lineTo(path[path.length - 1].x, path[path.length - 1].y);
+  ctx2.stroke();
+  // }
 }
 
 function radiansToDegrees(radians: number) {
@@ -192,71 +194,183 @@ export function effectorPoint(
   ctx.closePath();
 }
 
+// export function maxWorkingArea(
+//   ctx2: CanvasRenderingContext2D,
+//   ctx: CanvasRenderingContext2D,
+//   start,
+//   TOTAL_ARMS_LENGTH: number,
+//   OFFSET_EFFECTOR_X: number,
+// ) {
+//   // eslint-disable-next-line react-hooks/exhaustive-deps
+//   // Disegna la semi circonferenza massima che il braccio può disegnare
+//   for (let alpha = 1; alpha < 181; alpha++) {
+//     start(
+//       ctx2,
+//       ctx,
+//       Math.sin(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
+//         OFFSET_EFFECTOR_X,
+//       Math.cos(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+//       true,
+//       'red',
+//     );
+//   }
+//   for (let alpha = 180; alpha > 1; alpha--) {
+//     start(
+//       ctx2,
+//       ctx,
+//       Math.sin(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+//       Math.cos(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+//       true,
+//       'blue',
+//     );
+//   }
+//   // *************************************************************
+
+//   // Disegna l'area massima rettangolare inscritta nel cerchio
+//   start(
+//     ctx2,
+//     ctx,
+//     Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+//     1,
+//   );
+//   start(
+//     ctx2,
+//     ctx,
+//     Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+//     Math.cos(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+//     true,
+//     'yellow',
+//   );
+//   start(
+//     ctx2,
+//     ctx,
+//     Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+//     Math.cos(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+//     true,
+//     'yellow',
+//   );
+//   start(
+//     ctx2,
+//     ctx,
+//     Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+//     0,
+//     true,
+//     'yellow',
+//   );
+
+//   start(
+//     ctx2,
+//     ctx,
+//     Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+//     0,
+//     true,
+//     'yellow',
+//   );
+//   // **************************************************************
+// }
 export function maxWorkingArea(
-  ctx: CanvasRenderingContext2D,
+  ctx2,
+  ctx,
   start,
-  TOTAL_ARMS_LENGTH: number,
-  OFFSET_EFFECTOR_X: number,
+  TOTAL_ARMS_LENGTH,
+  OFFSET_EFFECTOR_X,
 ) {
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   // Disegna la semi circonferenza massima che il braccio può disegnare
-  for (let alpha = 1; alpha < 181; alpha++) {
-    start(
-      ctx,
-      Math.sin(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
-        OFFSET_EFFECTOR_X,
-      Math.cos(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-      true,
-      'red',
-    );
-  }
-  for (let alpha = 180; alpha > 1; alpha--) {
-    start(
-      ctx,
-      Math.sin(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-      Math.cos(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-      true,
-      'blue',
-    );
-  }
-  // *************************************************************
+  let alpha = 1;
+  const step = 1;
 
-  // Disegna l'area massima rettangolare inscritta nel cerchio
-  start(
-    ctx,
-    Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-    1,
-  );
-  start(
-    ctx,
-    Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-    Math.cos(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-    true,
-    'yellow',
-  );
-  start(
-    ctx,
-    Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-    Math.cos(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-    true,
-    'yellow',
-  );
-  start(
-    ctx,
-    Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-    0,
-    true,
-    'yellow',
-  );
+  function drawSemiCircle() {
+    if (alpha < 181) {
+      start(
+        ctx2,
+        ctx,
+        Math.sin(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
+          OFFSET_EFFECTOR_X,
+        Math.cos(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+        true,
+        'red',
+      );
+      alpha += step;
+      setTimeout(drawSemiCircle, 10); // Aggiunge un ritardo di 10ms tra le chiamate
+    } else {
+      alpha = 180;
+      drawReverseSemiCircle();
+    }
+  }
 
-  start(
-    ctx,
-    Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-    0,
-    true,
-    'yellow',
-  );
-  // **************************************************************
+  function drawReverseSemiCircle() {
+    if (alpha > 1) {
+      start(
+        ctx2,
+        ctx,
+        Math.sin(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
+          OFFSET_EFFECTOR_X,
+        Math.cos(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+        true,
+        'blue',
+      );
+      alpha -= step;
+      setTimeout(drawReverseSemiCircle, 10); // Aggiunge un ritardo di 10ms tra le chiamate
+    } else {
+      drawRectangle();
+    }
+  }
+
+  function drawRectangle() {
+    start(
+      ctx2,
+      ctx,
+      Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+      1,
+      false,
+      '',
+    );
+    setTimeout(() => {
+      start(
+        ctx2,
+        ctx,
+        Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
+        Math.cos(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+        true,
+        'yellow',
+      );
+      setTimeout(() => {
+        start(
+          ctx2,
+          ctx,
+          Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
+            OFFSET_EFFECTOR_X,
+          Math.cos(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
+          true,
+          'yellow',
+        );
+        setTimeout(() => {
+          start(
+            ctx2,
+            ctx,
+            Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
+              OFFSET_EFFECTOR_X,
+            0,
+            true,
+            'yellow',
+          );
+          setTimeout(() => {
+            start(
+              ctx2,
+              ctx,
+              Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
+                OFFSET_EFFECTOR_X,
+              0,
+              true,
+              'yellow',
+            );
+          }, 10);
+        }, 10);
+      }, 10);
+    }, 10);
+  }
+
+  drawSemiCircle();
 }
 
 export function inverseKinematicsSolver(
