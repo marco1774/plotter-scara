@@ -52,6 +52,7 @@ interface Props {}
 export function ScaraSimulation2d(props: Props) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const canvasPathRef = React.useRef<HTMLCanvasElement>(null);
+  const [play, setPlay] = React.useState<boolean>(false);
 
   // Modifica la scala del canvas
   const SCALA = 1.4;
@@ -85,6 +86,7 @@ export function ScaraSimulation2d(props: Props) {
   // Spessore linea arm
   const LINE_WIDTH_ARM = 10;
   let gcodeCount: number = 0;
+  const maxWorkingAreaPainted = React.useRef<boolean>(false);
 
   const path = React.useRef<PathTypes[]>([
     {
@@ -112,10 +114,15 @@ export function ScaraSimulation2d(props: Props) {
     gcodeContentString,
   });
 
+  function handlePlay() {
+    setPlay(true);
+  }
+
   React.useEffect(() => {
     // Resetta il contatore gcodeCount e il percorso
     // eslint-disable-next-line react-hooks/exhaustive-deps
     gcodeCount = 0;
+    let requestAnimationId: number;
     path.current = [
       {
         x: 0,
@@ -149,6 +156,7 @@ export function ScaraSimulation2d(props: Props) {
       OFFSET_CARTESIAN_PLANE_AXIS_Y,
       SCALA,
     );
+    drawCartesianPlane(ctx, GRID_POINTS_DISTANCE);
 
     function start(
       ctx2: any,
@@ -224,39 +232,41 @@ export function ScaraSimulation2d(props: Props) {
 
     // Disegna la semi circonferenza massima che il braccio può disegnare
     // Disegna l'area massima rettangolare inscritta nel cerchio
-    // maxWorkingArea(ctx2, ctx, start, TOTAL_ARMS_LENGTH, OFFSET_EFFECTOR_X);
+    if (!maxWorkingAreaPainted.current) {
+      maxWorkingAreaPainted.current = true;
+      maxWorkingArea(ctx2, ctx, start, TOTAL_ARMS_LENGTH, OFFSET_EFFECTOR_X);
+    }
 
     let myTimeout: any;
 
     const animateCallback = (animate) => {
-      if (!gcodeParsed.length) return;
+      if (!gcodeParsed.length || !play) return;
+      if (ctx == null) return;
+
       if (gcodeCount < gcodeParsed.length) {
-        if (ctx == null) return;
         if (typeof gcodeParsed[gcodeCount] === 'string') {
           gcodeCount++;
-          requestAnimationFrame(animate);
-          return;
+        } else {
+          start(
+            ctx2,
+            ctx,
+            gcodeParsed[gcodeCount][0],
+            gcodeParsed[gcodeCount][1],
+            gcodeParsed[gcodeCount][2],
+            'red',
+          );
+          gcodeCount++;
         }
-
-        start(
-          ctx2,
-          ctx,
-          gcodeParsed[gcodeCount][0],
-          gcodeParsed[gcodeCount][1],
-          gcodeParsed[gcodeCount][2],
-          'red',
-        );
-        gcodeCount++;
       } else {
         // gcodeCount = 0;
+        // setPlay(false);
       }
-      requestAnimationFrame(animate);
+
+      requestAnimationId = requestAnimationFrame(animate);
     };
 
     function animate() {
-      // myTimeout = setTimeout(() => {
       animateCallback(animate);
-      // }, 1000 / FPS);
     }
 
     animate();
@@ -264,10 +274,12 @@ export function ScaraSimulation2d(props: Props) {
     return () => {
       // eslint-disable-next-line no-console
       console.log('pulizia');
-      clearTimeout(myTimeout);
+      if (requestAnimationId) {
+        cancelAnimationFrame(requestAnimationId);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gcodeParsed]);
+  }, [play]);
 
   return (
     <MainContainer>
@@ -288,6 +300,12 @@ export function ScaraSimulation2d(props: Props) {
         </section>
         <section className={styles.box_option}>
           {/* <SimulationOptions /> */}
+          <Button variant="contained" onclick={() => handlePlay()}>
+            Play
+          </Button>
+          {/* <Button variant="contained" onclick={() => handlePause()}>
+            Pause
+          </Button> */}
         </section>
       </div>
     </MainContainer>
