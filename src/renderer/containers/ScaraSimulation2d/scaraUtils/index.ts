@@ -130,6 +130,7 @@ export function drawGCodePath(
   if (ctx2 == null) return;
   // ctx2.moveTo(path[0].x, path[0].y);
   // for (let i = 1; i < path.length; i++) {
+  ctx2.save();
   ctx2.beginPath();
   ctx2.lineWidth = DRAW_GCODE_PATH_LINE_WIDTH;
   ctx2.strokeStyle = path[path.length - 1].canDraw
@@ -138,6 +139,7 @@ export function drawGCodePath(
   ctx2.moveTo(path[path.length - 2].x, path[path.length - 2].y);
   ctx2.lineTo(path[path.length - 1].x, path[path.length - 1].y);
   ctx2.stroke();
+  ctx2.restore();
   // }
 }
 

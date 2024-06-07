@@ -53,6 +53,7 @@ export function ScaraSimulation2d(props: Props) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const canvasPathRef = React.useRef<HTMLCanvasElement>(null);
   const [play, setPlay] = React.useState<boolean>(false);
+  const pause = React.useRef<boolean>(false);
 
   // Modifica la scala del canvas
   const SCALA = 1.4;
@@ -85,7 +86,7 @@ export function ScaraSimulation2d(props: Props) {
   const OFFSET_EFFECTOR_X = TOTAL_ARMS_LENGTH * 0.707;
   // Spessore linea arm
   const LINE_WIDTH_ARM = 10;
-  let gcodeCount: number = 0;
+  const gcodeCount = React.useRef<number>(0);
   const maxWorkingAreaPainted = React.useRef<boolean>(false);
 
   const path = React.useRef<PathTypes[]>([
@@ -107,7 +108,8 @@ export function ScaraSimulation2d(props: Props) {
   /*
   Prende il gcode caricato come stringa e lo espone in
   */
-  const { gcodeContentString, setGcodeContentString } = useLoadGcodeContent();
+  const { gcodeContentString, setGcodeContentString } =
+    useLoadGcodeContent(gcodeCount);
 
   // Prende la linea gcode per analizzarla
   const { gcodeParsed, setGcodeParsed } = useParseGcodeContent({
@@ -115,13 +117,16 @@ export function ScaraSimulation2d(props: Props) {
   });
 
   function handlePlay() {
-    setPlay(true);
+    setPlay((prev) => !prev);
+  }
+  function handlePause() {
+    pause.current = !pause.current;
   }
 
   React.useEffect(() => {
     // Resetta il contatore gcodeCount e il percorso
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    gcodeCount = 0;
+    // gcodeCount = 0;
     let requestAnimationId: number;
     path.current = [
       {
@@ -237,31 +242,28 @@ export function ScaraSimulation2d(props: Props) {
       maxWorkingArea(ctx2, ctx, start, TOTAL_ARMS_LENGTH, OFFSET_EFFECTOR_X);
     }
 
-    let myTimeout: any;
-
     const animateCallback = (animate) => {
       if (!gcodeParsed.length || !play) return;
       if (ctx == null) return;
 
-      if (gcodeCount < gcodeParsed.length) {
-        if (typeof gcodeParsed[gcodeCount] === 'string') {
-          gcodeCount++;
+      if (!pause.current && gcodeCount.current < gcodeParsed.length) {
+        if (typeof gcodeParsed[gcodeCount.current] === 'string') {
+          gcodeCount.current++;
         } else {
           start(
             ctx2,
             ctx,
-            gcodeParsed[gcodeCount][0],
-            gcodeParsed[gcodeCount][1],
-            gcodeParsed[gcodeCount][2],
+            gcodeParsed[gcodeCount.current][0],
+            gcodeParsed[gcodeCount.current][1],
+            gcodeParsed[gcodeCount.current][2],
             'red',
           );
-          gcodeCount++;
+          gcodeCount.current++;
         }
       } else {
         // gcodeCount = 0;
         // setPlay(false);
       }
-
       requestAnimationId = requestAnimationFrame(animate);
     };
 
@@ -287,25 +289,30 @@ export function ScaraSimulation2d(props: Props) {
         <h1>Simulazione 2D</h1>
       </header>
       <div className={styles.box_body}>
-        <section className={styles.box_canvas}>
-          {/* <div id="TransformWrapperCont"> */}
-          <TransformWrapper panning={{ disabled: false }}>
-            <TransformComponent>
-              <canvas id="canvasPath" ref={canvasPathRef} />
-              <canvas id="canvas" ref={canvasRef} />
-            </TransformComponent>
-          </TransformWrapper>
-          {/* </div> */}
-          {/* <GcodeList originalGcodeList={gcodeContentString} /> */}
-        </section>
+        <div id="TransformWrapperCont">
+          <section className={styles.box_canvas}>
+            <TransformWrapper panning={{ disabled: false }}>
+              <TransformComponent>
+                <canvas id="canvasPath" ref={canvasPathRef} />
+                <canvas id="canvas" ref={canvasRef} />
+              </TransformComponent>
+            </TransformWrapper>
+          </section>
+          <section className={styles.gcode_list}>
+            <GcodeList
+              originalGcodeList={gcodeContentString}
+              gcodeCount={gcodeCount}
+            />
+          </section>
+        </div>
         <section className={styles.box_option}>
           {/* <SimulationOptions /> */}
           <Button variant="contained" onclick={() => handlePlay()}>
             Play
           </Button>
-          {/* <Button variant="contained" onclick={() => handlePause()}>
+          <Button variant="contained" onclick={() => handlePause()}>
             Pause
-          </Button> */}
+          </Button>
         </section>
       </div>
     </MainContainer>

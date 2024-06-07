@@ -1,12 +1,11 @@
 import React from 'react';
 
-export function useLoadGcodeContent() {
+export function useLoadGcodeContent(gcodeCount) {
   const [gcodeContentString, setGcodeContentString] = React.useState('');
-
   React.useEffect(() => {
     const handleGcodeLoad = (gcodeTxt: any) => {
-      console.log('passato gcode');
       setGcodeContentString(gcodeTxt);
+      gcodeCount.current = 0;
     };
 
     // Subscribe al canale 'gcode:load'
@@ -19,6 +18,7 @@ export function useLoadGcodeContent() {
     return () => {
       unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { gcodeContentString, setGcodeContentString };
