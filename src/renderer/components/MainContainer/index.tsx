@@ -11,5 +11,6 @@ interface Props {
 }
 
 export function MainContainer(props: Props) {
-  return <div className={styles.mainContainer}>{props.children}</div>;
+  const { children } = props;
+  return <div className={styles.mainContainer}>{children}</div>;
 }

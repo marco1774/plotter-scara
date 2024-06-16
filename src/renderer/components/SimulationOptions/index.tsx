@@ -23,9 +23,6 @@ function SimulationOptions(_props: SimulationOptionsProps) {
     <div>
       opzioni
       <pre style={{ width: '50%', height: '150px', overflowY: 'scroll' }}>
-        {/* {gcodeContent} */}
-      </pre>
-      <pre style={{ width: '50%', height: '150px', overflowY: 'scroll' }}>
         {dataArduino.map((data) => (
           <p>{data}</p>
         ))}

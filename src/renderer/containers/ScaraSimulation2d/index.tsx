@@ -1,3 +1,4 @@
+/* eslint-disable react/button-has-type */
 /* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable no-plusplus */
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -54,6 +55,11 @@ export function ScaraSimulation2d(props: Props) {
   const canvasPathRef = React.useRef<HTMLCanvasElement>(null);
   const [play, setPlay] = React.useState<boolean>(false);
   const pause = React.useRef<boolean>(false);
+  const [serialData, setSerialData] = React.useState('');
+
+  const sendCommand = (command) => {
+    window.electron.ipcRenderer.sendMessage('send-serial-command', command);
+  };
 
   // Modifica la scala del canvas
   const SCALA = 1.4;
@@ -299,20 +305,54 @@ export function ScaraSimulation2d(props: Props) {
             </TransformWrapper>
           </section>
           <section className={styles.gcode_list}>
-            <GcodeList
-              originalGcodeList={gcodeContentString}
-              gcodeCount={gcodeCount}
-            />
+            <GcodeList originalGcodeList={gcodeContentString} />
           </section>
         </div>
         <section className={styles.box_option}>
-          {/* <SimulationOptions /> */}
           <Button variant="contained" onclick={() => handlePlay()}>
             Play
           </Button>
           <Button variant="contained" onclick={() => handlePause()}>
             Pause
           </Button>
+          <div>
+            <h1>Arduino Serial Communication</h1>
+            <Button variant="contained" onclick={() => sendCommand('accendi')}>
+              Accendi
+            </Button>
+            <Button variant="contained" onclick={() => sendCommand('spegni')}>
+              Spegni
+            </Button>
+            <Button
+              variant="contained"
+              onclick={() => sendCommand('accendi-verde')}
+            >
+              Accendi Verde
+            </Button>
+            <Button
+              variant="contained"
+              onclick={() => sendCommand('spegni-verde')}
+            >
+              Spegni Verde
+            </Button>
+            <Button
+              variant="contained"
+              onclick={() => sendCommand('accendi-blu')}
+            >
+              Accendi Blu
+            </Button>
+            <Button
+              variant="contained"
+              onclick={() => sendCommand('spegni-blu')}
+            >
+              Spegni Blu
+            </Button>
+            <div>
+              <h2>Data from Arduino:</h2>
+              <p>{serialData}</p>
+            </div>
+          </div>
+          <SimulationOptions />
         </section>
       </div>
     </MainContainer>

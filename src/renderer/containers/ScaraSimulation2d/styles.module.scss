@@ -46,7 +46,6 @@
     }
   }
   .box_option {
-    @extend .option;
     @extend .box_radius_and_border;
   }
 }

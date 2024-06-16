@@ -44,6 +44,11 @@ SerialPort.list()
       if (!mainWindow) return;
       mainWindow.webContents.send('arduino-serial-data', data);
     });
+    // Listen for messages from renderer process
+    ipcMain.on('send-serial-command', (event, command) => {
+      console.log('Sending command to Arduino:', command);
+      port.write(`${command}\n`);
+    });
   })
   .catch(console.log);
 
