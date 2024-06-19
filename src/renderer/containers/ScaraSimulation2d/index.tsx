@@ -60,6 +60,11 @@ export function ScaraSimulation2d(props: Props) {
   const sendCommand = (command) => {
     window.electron.ipcRenderer.sendMessage('send-serial-command', command);
   };
+  const sendGcode = (gcodeList) => {
+    gcodeList.forEach((gcodeRow) => {
+      window.electron.ipcRenderer.sendMessage('send-serial-command', gcodeRow);
+    });
+  };
 
   // Modifica la scala del canvas
   const SCALA = 1.4;
@@ -94,6 +99,7 @@ export function ScaraSimulation2d(props: Props) {
   const LINE_WIDTH_ARM = 10;
   const gcodeCount = React.useRef<number>(0);
   const maxWorkingAreaPainted = React.useRef<boolean>(false);
+  const manualPositionRef = React.useRef({ x: 0, y: 0 });
 
   const path = React.useRef<PathTypes[]>([
     {
@@ -243,16 +249,29 @@ export function ScaraSimulation2d(props: Props) {
 
     // Disegna la semi circonferenza massima che il braccio può disegnare
     // Disegna l'area massima rettangolare inscritta nel cerchio
-    if (!maxWorkingAreaPainted.current) {
-      maxWorkingAreaPainted.current = true;
-      maxWorkingArea(ctx2, ctx, start, TOTAL_ARMS_LENGTH, OFFSET_EFFECTOR_X);
-    }
+    // if (!maxWorkingAreaPainted.current) {
+    //   maxWorkingAreaPainted.current = true;
+    //   maxWorkingArea(ctx2, ctx, start, TOTAL_ARMS_LENGTH, OFFSET_EFFECTOR_X);
+    // }
 
     const animateCallback = (animate) => {
-      if (!gcodeParsed.length || !play) return;
+      // if (!gcodeParsed.length || !play) return;
       if (ctx == null) return;
 
-      if (!pause.current && gcodeCount.current < gcodeParsed.length) {
+      start(
+        ctx2,
+        ctx,
+        manualPositionRef.current.x,
+        manualPositionRef.current.y,
+        false,
+        'red',
+      );
+
+      if (
+        (!gcodeParsed.length || !play) &&
+        !pause.current &&
+        gcodeCount.current < gcodeParsed.length
+      ) {
         if (typeof gcodeParsed[gcodeCount.current] === 'string') {
           gcodeCount.current++;
         } else {
@@ -346,6 +365,53 @@ export function ScaraSimulation2d(props: Props) {
               onclick={() => sendCommand('spegni-blu')}
             >
               Spegni Blu
+            </Button>
+            <Button variant="contained" onclick={() => sendGcode(gcodeParsed)}>
+              invia gcode
+            </Button>
+            <Button
+              variant="contained"
+              onclick={() => {
+                manualPositionRef.current = {
+                  x: manualPositionRef.current.x,
+                  y: manualPositionRef.current.y + 10,
+                };
+              }}
+            >
+              avanti
+            </Button>
+            <Button
+              variant="contained"
+              onclick={() => {
+                manualPositionRef.current = {
+                  x: manualPositionRef.current.x,
+                  y: manualPositionRef.current.y - 10,
+                };
+              }}
+            >
+              indietro
+            </Button>
+            <Button
+              variant="contained"
+              onclick={() => {
+                manualPositionRef.current = {
+                  x: manualPositionRef.current.x + 10,
+                  y: manualPositionRef.current.y,
+                };
+              }}
+            >
+              destra
+            </Button>
+            <Button
+              variant="contained"
+              onclick={() => {
+                manualPositionRef.current = {
+                  x: manualPositionRef.current.x - 10,
+                  y: manualPositionRef.current.y,
+                };
+              }}
+            >
+              sinistra
             </Button>
             <div>
               <h2>Data from Arduino:</h2>
