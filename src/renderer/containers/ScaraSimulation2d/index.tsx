@@ -53,8 +53,21 @@ interface Props {}
 export function ScaraSimulation2d(props: Props) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const canvasPathRef = React.useRef<HTMLCanvasElement>(null);
-  const [play, setPlay] = React.useState<boolean>(false);
+  // const [play, setPlay] = React.useState<boolean>(false);
+  const play = React.useRef<boolean>(false);
   const pause = React.useRef<boolean>(false);
+  const gcodeCount = React.useRef<number>(0);
+  const maxWorkingAreaPainted = React.useRef<boolean>(false);
+  const manualPositionRef = React.useRef({ x: 0, y: 0 });
+
+  const path = React.useRef<PathTypes[]>([
+    {
+      x: 0,
+      y: 0,
+      color: 'transparent',
+      canDraw: false,
+    },
+  ]);
   const [serialData, setSerialData] = React.useState('');
 
   const sendCommand = (command) => {
@@ -97,18 +110,6 @@ export function ScaraSimulation2d(props: Props) {
   const OFFSET_EFFECTOR_X = TOTAL_ARMS_LENGTH * 0.707;
   // Spessore linea arm
   const LINE_WIDTH_ARM = 10;
-  const gcodeCount = React.useRef<number>(0);
-  const maxWorkingAreaPainted = React.useRef<boolean>(false);
-  const manualPositionRef = React.useRef({ x: 0, y: 0 });
-
-  const path = React.useRef<PathTypes[]>([
-    {
-      x: 0,
-      y: 0,
-      color: 'transparent',
-      canDraw: false,
-    },
-  ]);
 
   // const gcode = [
   //   [0, 20],
@@ -129,11 +130,112 @@ export function ScaraSimulation2d(props: Props) {
   });
 
   function handlePlay() {
-    setPlay((prev) => !prev);
+    play.current = !play.current;
   }
   function handlePause() {
     pause.current = !pause.current;
   }
+
+  function start(
+    ctx2: any,
+    ctx: any,
+    x: number,
+    y: number,
+    canDraw: boolean,
+    gcodePathColor: string,
+  ) {
+    // inverse kinematics solver
+    const { FIRST_ARM_X, FIRST_ARM_Y, angElbow, angShoulder } =
+      inverseKinematicsSolver(
+        x,
+        y,
+        FIRST_ARM_LENGTH,
+        SECOND_ARM_LENGTH,
+        OFFSET_EFFECTOR_X,
+        OFFSET_ORIGIN_X,
+      );
+
+    // Pulisce il canvas ad ogni frame
+    clearCanvas(ctx2, canvasRef.current as HTMLCanvasElement);
+
+    // Disegna il piano cartesiano
+    drawCartesianPlane(ctx, GRID_POINTS_DISTANCE);
+
+    // Disegna e muove il primo braccio
+    drawAndMoveFirstArm(
+      ctx2,
+      FIRST_ARM_X,
+      FIRST_ARM_Y,
+      OFFSET_ORIGIN_X,
+      LINE_WIDTH_ARM,
+      'red',
+    );
+
+    // Disegna e muove il secondo braccio
+    const { secondArmEndX, secondArmEndY } = drawAndMoveSecondArm(
+      ctx2,
+      angShoulder,
+      angElbow,
+      FIRST_ARM_X,
+      FIRST_ARM_Y,
+      SECOND_ARM_LENGTH,
+      LINE_WIDTH_ARM,
+    );
+
+    // Aggiungi la posizione dell'effettore al percorso
+    if (path.current.length === 1) {
+      // siamo all'inizio
+      path.current.push({
+        x: secondArmEndX,
+        y: secondArmEndY,
+        color: gcodePathColor,
+        canDraw,
+      });
+    } else {
+      path.current.shift(); // rimuove primo elemento
+      path.current.push({
+        x: secondArmEndX,
+        y: secondArmEndY,
+        color: gcodePathColor,
+        canDraw,
+      });
+    }
+
+    // Disegna sul canvas
+    drawGCodePath(ctx, path.current, DRAW_GCODE_PATH_LINE_WIDTH);
+
+    // Sposta il punto effector
+    effectorPoint(ctx2, x, y, OFFSET_EFFECTOR_X);
+  }
+  const initializeCanvas = (canvas, canvasPath) => {
+    canvas.height = canvasHeight;
+    canvas.width = canvasWidth;
+    canvasPath.height = canvasHeight;
+    canvasPath.width = canvasWidth;
+    canvas.style.backgroundColor = CANVAS_BG_COLOR;
+    canvasPath.style.backgroundColor = '#fff';
+  };
+
+  const setupCanvasContext = (ctx, ctx2) => {
+    if (canvasRef.current == null) return;
+    /*
+     * sposta le coordinate dell'origine al centro del canvas
+     * inverte direzione asse Y
+     */
+    centerOriginAndFlipYAxis(
+      ctx,
+      canvasRef.current,
+      OFFSET_CARTESIAN_PLANE_AXIS_Y,
+      SCALA,
+    );
+    centerOriginAndFlipYAxis(
+      ctx2,
+      canvasRef.current,
+      OFFSET_CARTESIAN_PLANE_AXIS_Y,
+      SCALA,
+    );
+    drawCartesianPlane(ctx, GRID_POINTS_DISTANCE);
+  };
 
   React.useEffect(() => {
     // Resetta il contatore gcodeCount e il percorso
@@ -152,100 +254,13 @@ export function ScaraSimulation2d(props: Props) {
     // canvas config
     const canvas = canvasRef.current as HTMLCanvasElement;
     const canvasPath = canvasPathRef.current as HTMLCanvasElement;
-    canvas.height = canvasHeight;
-    canvas.width = canvasWidth;
-    canvasPath.height = canvasHeight;
-    canvasPath.width = canvasWidth;
-    canvas.style.backgroundColor = CANVAS_BG_COLOR;
-    canvasPath.style.backgroundColor = '#fff';
     const ctx = canvas.getContext('2d');
     const ctx2 = canvasPath.getContext('2d');
     if (canvas == null || ctx == null) return;
     if (canvasPath == null || ctx2 == null) return;
-    /*
-     * sposta le coordinate dell'origine al centro del canvas
-     * inverte direzione asse Y
-     */
-    centerOriginAndFlipYAxis(ctx, canvas, OFFSET_CARTESIAN_PLANE_AXIS_Y, SCALA);
-    centerOriginAndFlipYAxis(
-      ctx2,
-      canvas,
-      OFFSET_CARTESIAN_PLANE_AXIS_Y,
-      SCALA,
-    );
-    drawCartesianPlane(ctx, GRID_POINTS_DISTANCE);
 
-    function start(
-      ctx2: any,
-      ctx: any,
-      x: number,
-      y: number,
-      canDraw: boolean,
-      gcodePathColor: string,
-    ) {
-      // inverse kinematics solver
-      const { FIRST_ARM_X, FIRST_ARM_Y, angElbow, angShoulder } =
-        inverseKinematicsSolver(
-          x,
-          y,
-          FIRST_ARM_LENGTH,
-          SECOND_ARM_LENGTH,
-          OFFSET_EFFECTOR_X,
-          OFFSET_ORIGIN_X,
-        );
-
-      // Pulisce il canvas ad ogni frame
-      clearCanvas(ctx2, canvas);
-
-      // Disegna il piano cartesiano
-      drawCartesianPlane(ctx, GRID_POINTS_DISTANCE);
-
-      // Disegna e muove il primo braccio
-      drawAndMoveFirstArm(
-        ctx2,
-        FIRST_ARM_X,
-        FIRST_ARM_Y,
-        OFFSET_ORIGIN_X,
-        LINE_WIDTH_ARM,
-        'red',
-      );
-
-      // Disegna e muove il secondo braccio
-      const { secondArmEndX, secondArmEndY } = drawAndMoveSecondArm(
-        ctx2,
-        angShoulder,
-        angElbow,
-        FIRST_ARM_X,
-        FIRST_ARM_Y,
-        SECOND_ARM_LENGTH,
-        LINE_WIDTH_ARM,
-      );
-
-      // Aggiungi la posizione dell'effettore al percorso
-      if (path.current.length === 1) {
-        // siamo all'inizio
-        path.current.push({
-          x: secondArmEndX,
-          y: secondArmEndY,
-          color: gcodePathColor,
-          canDraw,
-        });
-      } else {
-        path.current.shift(); // rimuove primo elemento
-        path.current.push({
-          x: secondArmEndX,
-          y: secondArmEndY,
-          color: gcodePathColor,
-          canDraw,
-        });
-      }
-
-      // Disegna sul canvas
-      drawGCodePath(ctx, path.current, DRAW_GCODE_PATH_LINE_WIDTH);
-
-      // Sposta il punto effector
-      effectorPoint(ctx2, x, y, OFFSET_EFFECTOR_X);
-    }
+    initializeCanvas(canvas, canvasPath);
+    setupCanvasContext(ctx, ctx2);
 
     // Disegna la semi circonferenza massima che il braccio può disegnare
     // Disegna l'area massima rettangolare inscritta nel cerchio
@@ -255,20 +270,22 @@ export function ScaraSimulation2d(props: Props) {
     // }
 
     const animateCallback = (animate) => {
+      console.log('animate started');
       // if (!gcodeParsed.length || !play) return;
       if (ctx == null) return;
-
-      start(
-        ctx2,
-        ctx,
-        manualPositionRef.current.x,
-        manualPositionRef.current.y,
-        false,
-        'red',
-      );
+      if (!play.current) {
+        start(
+          ctx2,
+          ctx,
+          manualPositionRef.current.x,
+          manualPositionRef.current.y,
+          false,
+          'red',
+        );
+      }
 
       if (
-        (!gcodeParsed.length || !play) &&
+        (!gcodeParsed.length || !play.current) &&
         !pause.current &&
         gcodeCount.current < gcodeParsed.length
       ) {
@@ -306,7 +323,7 @@ export function ScaraSimulation2d(props: Props) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [play]);
+  }, []);
 
   return (
     <MainContainer>

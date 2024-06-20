@@ -19,7 +19,7 @@ export function clearCanvas(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
 ) {
-  if (ctx == null) return;
+  if (ctx == null || canvas == null) return;
 
   ctx.clearRect(
     -canvas.width,
