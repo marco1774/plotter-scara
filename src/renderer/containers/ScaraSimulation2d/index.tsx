@@ -248,14 +248,14 @@ export function ScaraSimulation2d(props: Props) {
     // gcodeCount = 0;
     let requestAnimationId: number;
     let resetCanvasPath = true;
-    path.current = [
-      {
-        x: 0,
-        y: 0,
-        color: 'transparent',
-        canDraw: false,
-      },
-    ];
+    // path.current = [
+    //   {
+    //     x: 0,
+    //     y: 0,
+    //     color: 'transparent',
+    //     canDraw: false,
+    //   },
+    // ];
 
     // canvas config
     const canvas = canvasRef.current as HTMLCanvasElement;
@@ -308,6 +308,8 @@ export function ScaraSimulation2d(props: Props) {
         ctx,
         resetCanvasPath,
         setIsPlaying,
+        manualPositionRef.current.x,
+        manualPositionRef.current.y,
       );
 
       requestAnimationId = requestAnimationFrame(animate);
@@ -407,6 +409,13 @@ export function ScaraSimulation2d(props: Props) {
                   x: manualPositionRef.current.x,
                   y: manualPositionRef.current.y + 10,
                 };
+                path.current = [
+                  {
+                    ...path.current[0],
+                    x: manualPositionRef.current.x,
+                    y: manualPositionRef.current.y + 10,
+                  },
+                ];
               }}
             >
               avanti

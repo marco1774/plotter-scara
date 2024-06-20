@@ -414,6 +414,8 @@ export function evaluateAndDrawGcode(
   ctx,
   resetCanvasPath1,
   setIsPlaying,
+  manualPositionRefOffsetX,
+  manualPositionRefOffsetY,
 ) {
   let resetCanvasPath = resetCanvasPath1;
   if (play.current && gcodeCount.current < gcodeParsed.length) {
@@ -427,8 +429,8 @@ export function evaluateAndDrawGcode(
       start(
         ctx2,
         ctx,
-        gcodeParsed[gcodeCount.current][0],
-        gcodeParsed[gcodeCount.current][1],
+        gcodeParsed[gcodeCount.current][0] + manualPositionRefOffsetX,
+        gcodeParsed[gcodeCount.current][1] + manualPositionRefOffsetY,
         gcodeParsed[gcodeCount.current][2],
         'red',
       );
