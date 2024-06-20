@@ -47,6 +47,7 @@ export function useParseGcodeContent({ gcodeContentString }) {
 
     startParseGcodeList();
   }, [gcodeContentString]);
+  console.log('🚀 ~ useParseGcodeContent ~ gcodeParsed:', gcodeParsed.length);
 
   return { gcodeParsed, setGcodeParsed };
 }

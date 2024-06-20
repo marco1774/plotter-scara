@@ -36,6 +36,7 @@ import {
   effectorPoint,
   maxWorkingArea,
   inverseKinematicsSolver,
+  evaluateAndDrawGcode,
 } from './scaraUtils';
 import { gcode } from './scaraUtils/gcodeProva';
 import { MainContainer } from '../../components/MainContainer';
@@ -59,6 +60,7 @@ export function ScaraSimulation2d(props: Props) {
   const gcodeCount = React.useRef<number>(0);
   const maxWorkingAreaPainted = React.useRef<boolean>(false);
   const manualPositionRef = React.useRef({ x: 0, y: 0 });
+  const [isPlaying, setIsPlaying] = React.useState(false);
 
   const path = React.useRef<PathTypes[]>([
     {
@@ -129,11 +131,14 @@ export function ScaraSimulation2d(props: Props) {
     gcodeContentString,
   });
 
+  console.log('gcodeParsed fuori', gcodeParsed.length);
   function handlePlay() {
     play.current = !play.current;
+    setIsPlaying(true);
   }
   function handlePause() {
     pause.current = !pause.current;
+    setIsPlaying(false);
   }
 
   function start(
@@ -155,7 +160,7 @@ export function ScaraSimulation2d(props: Props) {
         OFFSET_ORIGIN_X,
       );
 
-    // Pulisce il canvas ad ogni frame
+    // Pulisce il canvas ad ogni frame - layer dei bracci
     clearCanvas(ctx2, canvasRef.current as HTMLCanvasElement);
 
     // Disegna il piano cartesiano
@@ -242,6 +247,7 @@ export function ScaraSimulation2d(props: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     // gcodeCount = 0;
     let requestAnimationId: number;
+    let resetCanvasPath = true;
     path.current = [
       {
         x: 0,
@@ -270,7 +276,15 @@ export function ScaraSimulation2d(props: Props) {
     // }
 
     const animateCallback = (animate) => {
-      console.log('animate started');
+      console.log('animate started  --- play', play.current);
+      console.log(
+        'animate started  --- gcodeCount.current',
+        gcodeCount.current,
+      );
+      console.log(
+        'animate started  --- gcodeParsed.length',
+        gcodeParsed.length,
+      );
       // if (!gcodeParsed.length || !play) return;
       if (ctx == null) return;
       if (!play.current) {
@@ -284,28 +298,18 @@ export function ScaraSimulation2d(props: Props) {
         );
       }
 
-      if (
-        (!gcodeParsed.length || !play.current) &&
-        !pause.current &&
-        gcodeCount.current < gcodeParsed.length
-      ) {
-        if (typeof gcodeParsed[gcodeCount.current] === 'string') {
-          gcodeCount.current++;
-        } else {
-          start(
-            ctx2,
-            ctx,
-            gcodeParsed[gcodeCount.current][0],
-            gcodeParsed[gcodeCount.current][1],
-            gcodeParsed[gcodeCount.current][2],
-            'red',
-          );
-          gcodeCount.current++;
-        }
-      } else {
-        // gcodeCount = 0;
-        // setPlay(false);
-      }
+      resetCanvasPath = evaluateAndDrawGcode(
+        play,
+        gcodeParsed,
+        canvasRef,
+        gcodeCount,
+        start,
+        ctx2,
+        ctx,
+        resetCanvasPath,
+        setIsPlaying,
+      );
+
       requestAnimationId = requestAnimationFrame(animate);
     };
 
@@ -323,7 +327,7 @@ export function ScaraSimulation2d(props: Props) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [gcodeParsed]);
 
   return (
     <MainContainer>
@@ -345,12 +349,22 @@ export function ScaraSimulation2d(props: Props) {
           </section>
         </div>
         <section className={styles.box_option}>
-          <Button variant="contained" onclick={() => handlePlay()}>
-            Play
-          </Button>
-          <Button variant="contained" onclick={() => handlePause()}>
-            Pause
-          </Button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <Button variant="contained" onclick={() => handlePlay()}>
+              Play
+            </Button>
+            <div
+              className={`${
+                play.current && gcodeCount.current < gcodeParsed.length
+                  ? styles.activity_draw_gcode_led_on
+                  : styles.activity_draw_gcode_led_off
+              }`}
+            />
+            <Button variant="contained" onclick={() => handlePause()}>
+              Pause
+            </Button>
+          </div>
+
           <div>
             <h1>Arduino Serial Communication</h1>
             <Button variant="contained" onclick={() => sendCommand('accendi')}>

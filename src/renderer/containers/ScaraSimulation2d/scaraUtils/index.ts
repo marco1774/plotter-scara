@@ -403,3 +403,42 @@ export function inverseKinematicsSolver(
     angShoulder,
   };
 }
+
+export function evaluateAndDrawGcode(
+  play,
+  gcodeParsed,
+  canvasRef,
+  gcodeCount,
+  start,
+  ctx2,
+  ctx,
+  resetCanvasPath1,
+  setIsPlaying,
+) {
+  let resetCanvasPath = resetCanvasPath1;
+  if (play.current && gcodeCount.current < gcodeParsed.length) {
+    if (resetCanvasPath) {
+      clearCanvas(ctx, canvasRef.current as HTMLCanvasElement);
+      resetCanvasPath = false;
+    }
+    if (typeof gcodeParsed[gcodeCount.current] === 'string') {
+      gcodeCount.current++;
+    } else {
+      start(
+        ctx2,
+        ctx,
+        gcodeParsed[gcodeCount.current][0],
+        gcodeParsed[gcodeCount.current][1],
+        gcodeParsed[gcodeCount.current][2],
+        'red',
+      );
+      gcodeCount.current++;
+    }
+  } else if (gcodeCount.current === gcodeParsed.length && play.current) {
+    gcodeCount.current = 0;
+    play.current = false;
+    resetCanvasPath = true;
+    setIsPlaying(false);
+  }
+  return resetCanvasPath;
+}

@@ -47,5 +47,19 @@
   }
   .box_option {
     @extend .box_radius_and_border;
+    .activity_draw_gcode_led_on {
+      height: 30px;
+      width: 30px;
+      border: 3px solid #026704;
+      border-radius: 50%;
+      background-color: #0ded11;
+    }
+    .activity_draw_gcode_led_off {
+      height: 30px;
+      width: 30px;
+      border: 3px solid #026704;
+      border-radius: 50%;
+      background-color: #115b12;
+    }
   }
 }
