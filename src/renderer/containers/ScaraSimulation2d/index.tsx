@@ -82,7 +82,7 @@ export function ScaraSimulation2d(props: Props) {
   const [serialData, setSerialData] = React.useState('');
   // ************************************************************
   // Modifica la scala del canvas
-  const SCALA = 1.4;
+  const SCALA = 1.6;
   // Modifica la velocità dell'animazione
   const FPS = 60;
   // Il braccio è ancorato all'origine 0,0, questo aggiunge un offset in X
@@ -105,13 +105,16 @@ export function ScaraSimulation2d(props: Props) {
   // L'origine del piano cartesiano 0,0 è impostato al centro del canvas, aggiunge un offset in Y
   const OFFSET_CARTESIAN_PLANE_AXIS_Y =
     TOTAL_ARMS_LENGTH - TOTAL_ARMS_LENGTH * 0.5;
+  // L'origine del piano cartesiano 0,0 è impostato al centro del canvas, aggiunge un offset in X
+  const OFFSET_CARTESIAN_PLANE_AXIS_X =
+    TOTAL_ARMS_LENGTH - TOTAL_ARMS_LENGTH * 1.5;
   // Distanza punti griglia piano cartesiano
   const GRID_POINTS_DISTANCE = 10;
   // L'origine dell'effector sarebbe 0,0 al centro dell'area di lavoro rettangolare in X,
   // questo aggiunge un offset per portalo all'estremo
-  const OFFSET_EFFECTOR_X = TOTAL_ARMS_LENGTH * 0.707;
+  const OFFSET_EFFECTOR_X = TOTAL_ARMS_LENGTH * 0.707 - 40;
   // questo aggiunge un offset per avere un margine in y
-  const OFFSET_EFFECTOR_Y = 10;
+  const OFFSET_EFFECTOR_Y = 20;
   // Spessore linea arm
   const LINE_WIDTH_ARM = 10;
 
@@ -223,7 +226,12 @@ export function ScaraSimulation2d(props: Props) {
     clearCanvas(ctx2, canvasRef.current as HTMLCanvasElement);
 
     // Disegna il piano cartesiano
-    drawCartesianPlane(ctx, GRID_POINTS_DISTANCE);
+    drawCartesianPlane(
+      ctx,
+      GRID_POINTS_DISTANCE,
+      OFFSET_EFFECTOR_X,
+      OFFSET_EFFECTOR_Y,
+    );
 
     // Disegna e muove il primo braccio
     drawAndMoveFirstArm(
@@ -290,15 +298,22 @@ export function ScaraSimulation2d(props: Props) {
       ctx,
       canvasRef.current,
       OFFSET_CARTESIAN_PLANE_AXIS_Y,
+      OFFSET_CARTESIAN_PLANE_AXIS_X,
       SCALA,
     );
     centerOriginAndFlipYAxis(
       ctx2,
       canvasRef.current,
       OFFSET_CARTESIAN_PLANE_AXIS_Y,
+      OFFSET_CARTESIAN_PLANE_AXIS_X,
       SCALA,
     );
-    drawCartesianPlane(ctx, GRID_POINTS_DISTANCE);
+    drawCartesianPlane(
+      ctx,
+      GRID_POINTS_DISTANCE,
+      OFFSET_EFFECTOR_X,
+      OFFSET_EFFECTOR_Y,
+    );
   };
 
   React.useEffect(() => {

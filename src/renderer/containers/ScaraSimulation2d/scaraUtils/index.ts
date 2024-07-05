@@ -33,12 +33,13 @@ export function centerOriginAndFlipYAxis(
   ctx: CanvasRenderingContext2D,
   canvas: HTMLCanvasElement,
   OFFSET_CARTESIAN_PLANE_AXIS_Y: number,
+  OFFSET_CARTESIAN_PLANE_AXIS_X: number,
   SCALA: number,
 ) {
   if (ctx == null) return;
 
   ctx.translate(
-    canvas.width / 2,
+    canvas.width / 2 + OFFSET_CARTESIAN_PLANE_AXIS_X,
     canvas.height / 2 + OFFSET_CARTESIAN_PLANE_AXIS_Y,
   ); // sposta origine da top/sx al centro
   ctx.scale(SCALA, -SCALA); // cambia orientamento asse y numeri positi verso alto
@@ -47,26 +48,32 @@ export function centerOriginAndFlipYAxis(
 export function drawCartesianPlane(
   ctx: CanvasRenderingContext2D,
   GRID_POINTS_DISTANCE: number,
+  OFFSET_EFFECTOR_X: number,
+  OFFSET_EFFECTOR_Y: number,
 ) {
   if (ctx == null) return;
 
   ctx.save();
   ctx.beginPath();
   ctx.fillStyle = '#999';
-  for (let pointX = -160; pointX < 170; pointX += GRID_POINTS_DISTANCE) {
-    for (let pointY = 0; pointY < 160; pointY += GRID_POINTS_DISTANCE) {
+  for (let pointX = -115; pointX < 105; pointX += GRID_POINTS_DISTANCE) {
+    for (
+      let pointY = 0 + OFFSET_EFFECTOR_Y;
+      pointY < 175;
+      pointY += GRID_POINTS_DISTANCE
+    ) {
       ctx.fillRect(pointX, pointY, 1, 1);
     }
   }
   ctx.beginPath();
-  ctx.moveTo(-400, 0);
-  ctx.lineTo(400, 0);
+  ctx.moveTo(-400, 0 + OFFSET_EFFECTOR_Y);
+  ctx.lineTo(400, 0 + OFFSET_EFFECTOR_Y);
   ctx.strokeStyle = 'black';
   ctx.lineWidth = 1;
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(0, 400);
+  ctx.moveTo(0 - OFFSET_EFFECTOR_X, 0);
+  ctx.lineTo(0 - OFFSET_EFFECTOR_X, 400);
   ctx.strokeStyle = 'black';
   ctx.lineWidth = 1;
   ctx.stroke();
