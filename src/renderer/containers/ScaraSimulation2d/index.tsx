@@ -88,7 +88,7 @@ export function ScaraSimulation2d(props: Props) {
   // Il braccio è ancorato all'origine 0,0, questo aggiunge un offset in X
   const OFFSET_ORIGIN_X = 0;
   // Lunghezza primo braccio
-  const FIRST_ARM_LENGTH = 100;
+  const FIRST_ARM_LENGTH = 110;
   // lungezza secondo braccio
   const SECOND_ARM_LENGTH = FIRST_ARM_LENGTH;
   const FOOTER_ROOM = 300;
@@ -110,6 +110,8 @@ export function ScaraSimulation2d(props: Props) {
   // L'origine dell'effector sarebbe 0,0 al centro dell'area di lavoro rettangolare in X,
   // questo aggiunge un offset per portalo all'estremo
   const OFFSET_EFFECTOR_X = TOTAL_ARMS_LENGTH * 0.707;
+  // questo aggiunge un offset per avere un margine in y
+  const OFFSET_EFFECTOR_Y = 10;
   // Spessore linea arm
   const LINE_WIDTH_ARM = 10;
 
@@ -214,6 +216,7 @@ export function ScaraSimulation2d(props: Props) {
         SECOND_ARM_LENGTH,
         OFFSET_EFFECTOR_X,
         OFFSET_ORIGIN_X,
+        OFFSET_EFFECTOR_Y,
       );
 
     // Pulisce il canvas ad ogni frame - layer dei bracci
@@ -266,7 +269,7 @@ export function ScaraSimulation2d(props: Props) {
     drawGCodePath(ctx, path.current, DRAW_GCODE_PATH_LINE_WIDTH);
 
     // Sposta il punto effector
-    effectorPoint(ctx2, x, y, OFFSET_EFFECTOR_X);
+    effectorPoint(ctx2, x, y, OFFSET_EFFECTOR_X, OFFSET_EFFECTOR_Y);
   }
   const initializeCanvas = (canvas, canvasPath) => {
     canvas.height = canvasHeight;

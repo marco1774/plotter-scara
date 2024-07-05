@@ -184,11 +184,12 @@ export function effectorPoint(
   x: number,
   y: any,
   OFFSET_EFFECTOR_X: number,
+  OFFSET_EFFECTOR_Y: number,
 ) {
   if (ctx == null) return;
 
   ctx.beginPath();
-  ctx.arc(x - OFFSET_EFFECTOR_X, y, 1, 0, 2 * Math.PI);
+  ctx.arc(x - OFFSET_EFFECTOR_X, y + OFFSET_EFFECTOR_Y, 1, 0, 2 * Math.PI);
   ctx.strokeStyle = 'yellow';
   ctx.lineWidth = 2;
   ctx.stroke();
@@ -382,10 +383,12 @@ export function inverseKinematicsSolver(
   SECOND_ARM_LENGTH,
   OFFSET_EFFECTOR_X,
   OFFSET_ORIGIN_X,
+  OFFSET_EFFECTOR_Y,
 ) {
+  console.log('x,y', x, y);
   const [tetha1, tetha2] = XYToAngle(
     x - OFFSET_EFFECTOR_X,
-    y,
+    y + OFFSET_EFFECTOR_Y,
     FIRST_ARM_LENGTH,
     SECOND_ARM_LENGTH,
   );
