@@ -7,7 +7,12 @@ export type Channels =
   | 'gcode:load'
   | 'ipc-prova'
   | 'arduino-serial-data'
-  | 'send-serial-command';
+  | 'send-serial-command'
+  | 'prepareGcode'
+  | 'initBuffer-start'
+  | 'initBuffer-end'
+  | 'initBuffer-stop'
+  | 'gCode-GET';
 
 const electronHandler = {
   ipcRenderer: {

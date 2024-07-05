@@ -40,13 +40,28 @@ SerialPort.list()
     });
     const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
     parser.on('data', (data) => {
-      console.log('data', data);
+      console.log('data da arduino', data);
       if (!mainWindow) return;
       mainWindow.webContents.send('arduino-serial-data', data);
+      if (data === 'gCode-GET') {
+        mainWindow.webContents.send('gCode-GET');
+      }
     });
     // Listen for messages from renderer process
     ipcMain.on('send-serial-command', (event, command) => {
-      console.log('Sending command to Arduino:', command);
+      // console.log('Sending command to Arduino:', command);
+      port.write(`${command}\n`);
+    });
+    ipcMain.on('initBuffer-start', () => {
+      port.write('initBuffer-start\n');
+    });
+    ipcMain.on('initBuffer-stop', () => {
+      port.write('initBuffer-stop\n');
+    });
+    ipcMain.on('initBuffer-end', () => {
+      port.write('initBuffer-end\n');
+    });
+    ipcMain.on('prepareGcode', (event, command) => {
       port.write(`${command}\n`);
     });
   })

@@ -39,7 +39,7 @@ export function useParseGcodeContent({ gcodeContentString }) {
         if (line.startsWith('G1') || line.startsWith('G01')) {
           parseGcodeLine(line);
         } else {
-          setGcodeParsed((prev) => [...prev, line]);
+          //  setGcodeParsed((prev) => [...prev, line]);
         }
         gCodeIndex += 1;
       }
@@ -47,7 +47,6 @@ export function useParseGcodeContent({ gcodeContentString }) {
 
     startParseGcodeList();
   }, [gcodeContentString]);
-  console.log('🚀 ~ useParseGcodeContent ~ gcodeParsed:', gcodeParsed.length);
 
   return { gcodeParsed, setGcodeParsed };
 }

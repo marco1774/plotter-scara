@@ -1,3 +1,5 @@
+/* eslint-disable no-await-in-loop */
+/* eslint-disable no-promise-executor-return */
 /* eslint-disable react/button-has-type */
 /* eslint-disable @typescript-eslint/no-shadow */
 /* eslint-disable no-plusplus */
@@ -58,6 +60,13 @@ export function ScaraSimulation2d(props: Props) {
   const play = React.useRef<boolean>(false);
   const pause = React.useRef<boolean>(false);
   const gcodeCount = React.useRef<number>(0);
+
+  // Gcode chunck da madare ad arduino
+  const gcodeChunkCurrentIndex = React.useRef<number>(0);
+  const gcodeChunkToSend = React.useRef<number>(1);
+  const totalLinesGcodeToSend = React.useRef<number>(0);
+  // ********************************
+
   const maxWorkingAreaPainted = React.useRef<boolean>(false);
   const manualPositionRef = React.useRef({ x: 0, y: 0 });
   const [isPlaying, setIsPlaying] = React.useState(false);
@@ -71,16 +80,7 @@ export function ScaraSimulation2d(props: Props) {
     },
   ]);
   const [serialData, setSerialData] = React.useState('');
-
-  const sendCommand = (command) => {
-    window.electron.ipcRenderer.sendMessage('send-serial-command', command);
-  };
-  const sendGcode = (gcodeList) => {
-    gcodeList.forEach((gcodeRow) => {
-      window.electron.ipcRenderer.sendMessage('send-serial-command', gcodeRow);
-    });
-  };
-
+  // ************************************************************
   // Modifica la scala del canvas
   const SCALA = 1.4;
   // Modifica la velocità dell'animazione
@@ -113,6 +113,47 @@ export function ScaraSimulation2d(props: Props) {
   // Spessore linea arm
   const LINE_WIDTH_ARM = 10;
 
+  // ************************************************************
+
+  const sendGcode = async (gcodeList) => {
+    totalLinesGcodeToSend.current = gcodeList.length;
+    console.log(
+      '🚀 ~ sendGcode ~ gcodeList[gcodeChunkCurrentIndex.current].toString():',
+      gcodeList[gcodeChunkCurrentIndex.current].toString(),
+    );
+    const res = gcodeList[gcodeChunkCurrentIndex.current];
+    window.electron.ipcRenderer.sendMessage('prepareGcode', res);
+    gcodeChunkCurrentIndex.current++;
+    gcodeChunkToSend.current++;
+
+    // await new Promise((resolve) => setTimeout(resolve, 100));
+    // window.electron.ipcRenderer.sendMessage('initBuffer-stop');
+    // if (totalLinesGcodeToSend.current >= gcodeList.length) {
+    //   window.electron.ipcRenderer.sendMessage('initBuffer-end');
+    // }
+  };
+
+  const prepareGcode = () => {
+    window.electron.ipcRenderer.sendMessage('initBuffer-start');
+  };
+
+  // gestione led
+  const sendCommand = (command) => {
+    window.electron.ipcRenderer.sendMessage('send-serial-command', command);
+  };
+
+  // const sendGcode = async (gcodeList) => {
+  //   console.log(' ~ sendGcode ~ gcodeList:', gcodeList);
+  //   // eslint-disable-next-line no-restricted-syntax
+  //   for (const gcodeRow of gcodeList) {
+  //     console.log('gcodeRow', gcodeRow);
+  //     window.electron.ipcRenderer.sendMessage('send-serial-command', gcodeRow);
+
+  //     // Aggiungere un ritardo dopo ogni riga (in millisecondi)
+  //     await new Promise((resolve) => setTimeout(resolve, 20));
+  //   }
+  // };
+
   // const gcode = [
   //   [0, 20],
   //   [20, 20],
@@ -131,7 +172,22 @@ export function ScaraSimulation2d(props: Props) {
     gcodeContentString,
   });
 
-  console.log('gcodeParsed fuori', gcodeParsed.length);
+  React.useEffect(() => {
+    function handleSerialData(data) {
+      sendGcode(gcodeParsed);
+    }
+    const unsubscribe = window.electron.ipcRenderer.on(
+      'gCode-GET',
+      handleSerialData,
+    );
+
+    // Pulizia listener su component unmount
+    return () => {
+      unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function handlePlay() {
     play.current = !play.current;
     setIsPlaying(true);
@@ -276,15 +332,15 @@ export function ScaraSimulation2d(props: Props) {
     // }
 
     const animateCallback = (animate) => {
-      console.log('animate started  --- play', play.current);
-      console.log(
-        'animate started  --- gcodeCount.current',
-        gcodeCount.current,
-      );
-      console.log(
-        'animate started  --- gcodeParsed.length',
-        gcodeParsed.length,
-      );
+      // console.log('animate started  --- play', play.current);
+      // console.log(
+      //   'animate started  --- gcodeCount.current',
+      //   gcodeCount.current,
+      // );
+      // console.log(
+      //   'animate started  --- gcodeParsed.length',
+      //   gcodeParsed.length,
+      // );
       // if (!gcodeParsed.length || !play) return;
       if (ctx == null) return;
       if (!play.current) {
@@ -401,6 +457,9 @@ export function ScaraSimulation2d(props: Props) {
             </Button>
             <Button variant="contained" onclick={() => sendGcode(gcodeParsed)}>
               invia gcode
+            </Button>
+            <Button variant="contained" onclick={() => prepareGcode()}>
+              prepara gcode
             </Button>
             <Button
               variant="contained"
