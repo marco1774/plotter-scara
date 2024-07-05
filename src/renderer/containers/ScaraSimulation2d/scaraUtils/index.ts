@@ -392,13 +392,14 @@ export function inverseKinematicsSolver(
   OFFSET_ORIGIN_X,
   OFFSET_EFFECTOR_Y,
 ) {
-  console.log('x,y', x, y);
+  console.log('x,y:', x, y);
   const [tetha1, tetha2] = XYToAngle(
     x - OFFSET_EFFECTOR_X,
     y + OFFSET_EFFECTOR_Y,
     FIRST_ARM_LENGTH,
     SECOND_ARM_LENGTH,
   );
+  console.log('tetha1, tetha2:', tetha1, tetha2);
 
   const angShoulder = tetha1 * (Math.PI / 180); // gradi in radianti
   const FIRST_ARM_X =

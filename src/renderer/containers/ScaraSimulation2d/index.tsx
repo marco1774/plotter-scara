@@ -82,7 +82,7 @@ export function ScaraSimulation2d(props: Props) {
   const [serialData, setSerialData] = React.useState('');
   // ************************************************************
   // Modifica la scala del canvas
-  const SCALA = 1.6;
+  const SCALA = 2;
   // Modifica la velocità dell'animazione
   const FPS = 60;
   // Il braccio è ancorato all'origine 0,0, questo aggiunge un offset in X
@@ -97,17 +97,17 @@ export function ScaraSimulation2d(props: Props) {
   // Colore di backgraund del canvas
   const CANVAS_BG_COLOR = '#f4f4f400';
   // Spessore della linea di disegno del path
-  const DRAW_GCODE_PATH_LINE_WIDTH = 0.6;
+  const DRAW_GCODE_PATH_LINE_WIDTH = 0.4;
   // Canvas height
   const canvasHeight = TOTAL_ARMS_LENGTH * SCALA * 1.6;
   // Canvas width
   const canvasWidth = TOTAL_ARMS_LENGTH * SCALA * 2 + 10;
   // L'origine del piano cartesiano 0,0 è impostato al centro del canvas, aggiunge un offset in Y
   const OFFSET_CARTESIAN_PLANE_AXIS_Y =
-    TOTAL_ARMS_LENGTH - TOTAL_ARMS_LENGTH * 0.5;
+    TOTAL_ARMS_LENGTH - TOTAL_ARMS_LENGTH * 0.8;
   // L'origine del piano cartesiano 0,0 è impostato al centro del canvas, aggiunge un offset in X
   const OFFSET_CARTESIAN_PLANE_AXIS_X =
-    TOTAL_ARMS_LENGTH - TOTAL_ARMS_LENGTH * 1.5;
+    TOTAL_ARMS_LENGTH - TOTAL_ARMS_LENGTH * 1.7;
   // Distanza punti griglia piano cartesiano
   const GRID_POINTS_DISTANCE = 10;
   // L'origine dell'effector sarebbe 0,0 al centro dell'area di lavoro rettangolare in X,
@@ -116,7 +116,7 @@ export function ScaraSimulation2d(props: Props) {
   // questo aggiunge un offset per avere un margine in y
   const OFFSET_EFFECTOR_Y = 20;
   // Spessore linea arm
-  const LINE_WIDTH_ARM = 10;
+  const LINE_WIDTH_ARM = 15;
 
   // ************************************************************
 
