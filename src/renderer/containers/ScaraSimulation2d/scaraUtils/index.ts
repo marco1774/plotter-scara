@@ -204,185 +204,6 @@ export function effectorPoint(
   ctx.closePath();
 }
 
-// export function maxWorkingArea(
-//   ctx2: CanvasRenderingContext2D,
-//   ctx: CanvasRenderingContext2D,
-//   start,
-//   TOTAL_ARMS_LENGTH: number,
-//   OFFSET_EFFECTOR_X: number,
-// ) {
-//   // eslint-disable-next-line react-hooks/exhaustive-deps
-//   // Disegna la semi circonferenza massima che il braccio può disegnare
-//   for (let alpha = 1; alpha < 181; alpha++) {
-//     start(
-//       ctx2,
-//       ctx,
-//       Math.sin(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
-//         OFFSET_EFFECTOR_X,
-//       Math.cos(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-//       true,
-//       'red',
-//     );
-//   }
-//   for (let alpha = 180; alpha > 1; alpha--) {
-//     start(
-//       ctx2,
-//       ctx,
-//       Math.sin(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-//       Math.cos(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-//       true,
-//       'blue',
-//     );
-//   }
-//   // *************************************************************
-
-//   // Disegna l'area massima rettangolare inscritta nel cerchio
-//   start(
-//     ctx2,
-//     ctx,
-//     Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-//     1,
-//   );
-//   start(
-//     ctx2,
-//     ctx,
-//     Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-//     Math.cos(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-//     true,
-//     'yellow',
-//   );
-//   start(
-//     ctx2,
-//     ctx,
-//     Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-//     Math.cos(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-//     true,
-//     'yellow',
-//   );
-//   start(
-//     ctx2,
-//     ctx,
-//     Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-//     0,
-//     true,
-//     'yellow',
-//   );
-
-//   start(
-//     ctx2,
-//     ctx,
-//     Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-//     0,
-//     true,
-//     'yellow',
-//   );
-//   // **************************************************************
-// }
-export function maxWorkingArea(
-  ctx2,
-  ctx,
-  start,
-  TOTAL_ARMS_LENGTH,
-  OFFSET_EFFECTOR_X,
-) {
-  // Disegna la semi circonferenza massima che il braccio può disegnare
-  let alpha = 1;
-  const step = 1;
-
-  function drawSemiCircle() {
-    if (alpha < 181) {
-      start(
-        ctx2,
-        ctx,
-        Math.sin(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
-          OFFSET_EFFECTOR_X,
-        Math.cos(-alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-        true,
-        'red',
-      );
-      alpha += step;
-      setTimeout(drawSemiCircle, 10); // Aggiunge un ritardo di 10ms tra le chiamate
-    } else {
-      alpha = 180;
-      drawReverseSemiCircle();
-    }
-  }
-
-  function drawReverseSemiCircle() {
-    if (alpha > 1) {
-      start(
-        ctx2,
-        ctx,
-        Math.sin(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
-          OFFSET_EFFECTOR_X,
-        Math.cos(alpha * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-        true,
-        'blue',
-      );
-      alpha -= step;
-      setTimeout(drawReverseSemiCircle, 10); // Aggiunge un ritardo di 10ms tra le chiamate
-    } else {
-      drawRectangle();
-    }
-  }
-
-  function drawRectangle() {
-    start(
-      ctx2,
-      ctx,
-      Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-      1,
-      false,
-      '',
-    );
-    setTimeout(() => {
-      start(
-        ctx2,
-        ctx,
-        Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH + OFFSET_EFFECTOR_X,
-        Math.cos(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-        true,
-        'yellow',
-      );
-      setTimeout(() => {
-        start(
-          ctx2,
-          ctx,
-          Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
-            OFFSET_EFFECTOR_X,
-          Math.cos(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH,
-          true,
-          'yellow',
-        );
-        setTimeout(() => {
-          start(
-            ctx2,
-            ctx,
-            Math.sin(45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
-              OFFSET_EFFECTOR_X,
-            0,
-            true,
-            'yellow',
-          );
-          setTimeout(() => {
-            start(
-              ctx2,
-              ctx,
-              Math.sin(-45 * (Math.PI / 180)) * TOTAL_ARMS_LENGTH +
-                OFFSET_EFFECTOR_X,
-              0,
-              true,
-              'yellow',
-            );
-          }, 10);
-        }, 10);
-      }, 10);
-    }, 10);
-  }
-
-  drawSemiCircle();
-}
-
 export function inverseKinematicsSolver(
   x,
   y,
@@ -392,14 +213,14 @@ export function inverseKinematicsSolver(
   OFFSET_ORIGIN_X,
   OFFSET_EFFECTOR_Y,
 ) {
-  console.log('x,y:', x, y);
+  // console.log('x,y:', x, y);
   const [tetha1, tetha2] = XYToAngle(
     x - OFFSET_EFFECTOR_X,
     y + OFFSET_EFFECTOR_Y,
     FIRST_ARM_LENGTH,
     SECOND_ARM_LENGTH,
   );
-  console.log('tetha1, tetha2:', tetha1, tetha2);
+  // console.log('tetha1, tetha2:', tetha1, tetha2);
 
   const angShoulder = tetha1 * (Math.PI / 180); // gradi in radianti
   const FIRST_ARM_X =
@@ -424,19 +245,29 @@ export function evaluateAndDrawGcode(
   ctx2,
   ctx,
   resetCanvasPath1,
-  setIsPlaying,
   manualPositionRefOffsetX,
   manualPositionRefOffsetY,
 ) {
+  // Inizializza il flag per resettare il percorso del canvas
   let resetCanvasPath = resetCanvasPath1;
+
+  // Se lo stato di gioco è attivo e non siamo all'ultimo comando G-Code
   if (play.current && gcodeCount.current < gcodeParsed.length) {
+    // Se il flag di reset è impostato, pulisci il canvas e disattiva il flag di reset
     if (resetCanvasPath) {
       clearCanvas(ctx, canvasRef.current as HTMLCanvasElement);
       resetCanvasPath = false;
     }
+
+    // Verifica se l'elemento corrente del G-Code è una stringa
     if (typeof gcodeParsed[gcodeCount.current] === 'string') {
+      // Se è una stringa, incrementa il contatore dei comandi G-Code
       gcodeCount.current++;
     } else {
+      // Altrimenti, esegui il comando G-Code:
+      // - ctx2 e ctx sono i contesti del canvas
+      // - La posizione X e Y vengono calcolate aggiungendo gli offset manualPositionRefOffsetX e manualPositionRefOffsetY
+      // - Il terzo elemento del comando G-Code (gcodeParsed[gcodeCount.current][2]) viene passato come parametro booleano
       start(
         ctx2,
         ctx,
@@ -445,13 +276,20 @@ export function evaluateAndDrawGcode(
         gcodeParsed[gcodeCount.current][2],
         'red',
       );
+
+      // Incrementa il contatore dei comandi G-Code
       gcodeCount.current++;
     }
   } else if (gcodeCount.current === gcodeParsed.length && play.current) {
+    // Se siamo all'ultimo comando G-Code e lo stato di gioco è attivo
+    // - Reimposta il contatore dei comandi G-Code a zero
+    // - Disattiva lo stato di gioco
+    // - Imposta il flag di reset per pulire il canvas alla prossima iterazione
     gcodeCount.current = 0;
     play.current = false;
     resetCanvasPath = true;
-    setIsPlaying(false);
   }
+
+  // Restituisci il flag di reset del percorso del canvas
   return resetCanvasPath;
 }

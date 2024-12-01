@@ -24,6 +24,14 @@ export function HomePage() {
         >
           prova
         </Button>
+        <Button
+          variant="contained"
+          onclick={() => {
+            navigate('newSimulation2d');
+          }}
+        >
+          New Simulation
+        </Button>
         <Button variant="contained" onclick={() => handleIPC()}>
           prova comunicazione
         </Button>

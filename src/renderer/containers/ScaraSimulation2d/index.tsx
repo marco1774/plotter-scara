@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-promise-executor-return */
 /* eslint-disable react/button-has-type */
@@ -36,7 +37,6 @@ import {
   XYToAngle,
   clearCanvas,
   effectorPoint,
-  maxWorkingArea,
   inverseKinematicsSolver,
   evaluateAndDrawGcode,
 } from './scaraUtils';
@@ -56,20 +56,11 @@ interface Props {}
 export function ScaraSimulation2d(props: Props) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const canvasPathRef = React.useRef<HTMLCanvasElement>(null);
-  // const [play, setPlay] = React.useState<boolean>(false);
-  const play = React.useRef<boolean>(false);
+  const play = React.useRef<boolean>(false); // booleano usato per far partire la simulazione del gcode, usando useRef si evita di re-renderizzare il componente , ricominciando da capo
   const pause = React.useRef<boolean>(false);
   const gcodeCount = React.useRef<number>(0);
 
-  // Gcode chunck da madare ad arduino
-  const gcodeChunkCurrentIndex = React.useRef<number>(0);
-  const gcodeChunkToSend = React.useRef<number>(1);
-  const totalLinesGcodeToSend = React.useRef<number>(0);
-  // ********************************
-
-  const maxWorkingAreaPainted = React.useRef<boolean>(false);
   const manualPositionRef = React.useRef({ x: 0, y: 0 });
-  const [isPlaying, setIsPlaying] = React.useState(false);
 
   const path = React.useRef<PathTypes[]>([
     {
@@ -79,9 +70,7 @@ export function ScaraSimulation2d(props: Props) {
       canDraw: false,
     },
   ]);
-  const [serialData, setSerialData] = React.useState('');
-  // ************************************************************
-  // Modifica la scala del canvas
+  // **************************** Modifica la scala del canvas ********************************
   const SCALA = 2;
   // Modifica la velocità dell'animazione
   const FPS = 60;
@@ -120,86 +109,33 @@ export function ScaraSimulation2d(props: Props) {
 
   // ************************************************************
 
-  const sendGcode = async (gcodeList) => {
-    totalLinesGcodeToSend.current = gcodeList.length;
-    console.log(
-      '🚀 ~ sendGcode ~ gcodeList[gcodeChunkCurrentIndex.current].toString():',
-      gcodeList[gcodeChunkCurrentIndex.current].toString(),
-    );
-    const res = gcodeList[gcodeChunkCurrentIndex.current];
-    window.electron.ipcRenderer.sendMessage('prepareGcode', res);
-    gcodeChunkCurrentIndex.current++;
-    gcodeChunkToSend.current++;
-
-    // await new Promise((resolve) => setTimeout(resolve, 100));
-    // window.electron.ipcRenderer.sendMessage('initBuffer-stop');
-    // if (totalLinesGcodeToSend.current >= gcodeList.length) {
-    //   window.electron.ipcRenderer.sendMessage('initBuffer-end');
-    // }
-  };
-
-  const prepareGcode = () => {
-    window.electron.ipcRenderer.sendMessage('initBuffer-start');
-  };
-
   // gestione led
   const sendCommand = (command) => {
     window.electron.ipcRenderer.sendMessage('send-serial-command', command);
   };
 
-  // const sendGcode = async (gcodeList) => {
-  //   console.log(' ~ sendGcode ~ gcodeList:', gcodeList);
-  //   // eslint-disable-next-line no-restricted-syntax
-  //   for (const gcodeRow of gcodeList) {
-  //     console.log('gcodeRow', gcodeRow);
-  //     window.electron.ipcRenderer.sendMessage('send-serial-command', gcodeRow);
+  //----------------------------------------------------------------------
+  //                               ++START++
+  // Punto di ingresso del gcode caricato da file txt
+  // Prende il gcode caricato come stringa e lo espone in gcodeContentString
+  const { gcodeContentString } = useLoadGcodeContent(gcodeCount);
+  //----------------------------------------------------------------------
 
-  //     // Aggiungere un ritardo dopo ogni riga (in millisecondi)
-  //     await new Promise((resolve) => setTimeout(resolve, 20));
-  //   }
-  // };
-
-  // const gcode = [
-  //   [0, 20],
-  //   [20, 20],
-  //   [20, 0],
-  //   [0, 0],
-  // ];
-
-  /*
-  Prende il gcode caricato come stringa e lo espone in
-  */
-  const { gcodeContentString, setGcodeContentString } =
-    useLoadGcodeContent(gcodeCount);
-
-  // Prende la linea gcode per analizzarla
-  const { gcodeParsed, setGcodeParsed } = useParseGcodeContent({
+  //----------------------------------------------------------------------
+  //                            ++Secondo step++
+  // Prende la linea gcode per analizzarla, si attiva una volta che il gcode
+  // è caricato
+  // dentro gcodeContentString ed espone il gcode pulito dentro gcodeParsed
+  const { gcodeParsed } = useParseGcodeContent({
     gcodeContentString,
   });
-
-  React.useEffect(() => {
-    function handleSerialData(data) {
-      sendGcode(gcodeParsed);
-    }
-    const unsubscribe = window.electron.ipcRenderer.on(
-      'gCode-GET',
-      handleSerialData,
-    );
-
-    // Pulizia listener su component unmount
-    return () => {
-      unsubscribe();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  //----------------------------------------------------------------------
 
   function handlePlay() {
     play.current = !play.current;
-    setIsPlaying(true);
   }
   function handlePause() {
     pause.current = !pause.current;
-    setIsPlaying(false);
   }
 
   function start(
@@ -210,7 +146,7 @@ export function ScaraSimulation2d(props: Props) {
     canDraw: boolean,
     gcodePathColor: string,
   ) {
-    // inverse kinematics solver
+    // Risolve la cinematica inversa per calcolare gli angoli degli articoli del braccio meccanico.
     const { FIRST_ARM_X, FIRST_ARM_Y, angElbow, angShoulder } =
       inverseKinematicsSolver(
         x,
@@ -225,7 +161,7 @@ export function ScaraSimulation2d(props: Props) {
     // Pulisce il canvas ad ogni frame - layer dei bracci
     clearCanvas(ctx2, canvasRef.current as HTMLCanvasElement);
 
-    // Disegna il piano cartesiano
+    // Disegna il piano cartesiano.
     drawCartesianPlane(
       ctx,
       GRID_POINTS_DISTANCE,
@@ -233,7 +169,7 @@ export function ScaraSimulation2d(props: Props) {
       OFFSET_EFFECTOR_Y,
     );
 
-    // Disegna e muove il primo braccio
+    // Disegna e muove il primo braccio al posizionamento calcolato.
     drawAndMoveFirstArm(
       ctx2,
       FIRST_ARM_X,
@@ -243,7 +179,7 @@ export function ScaraSimulation2d(props: Props) {
       'red',
     );
 
-    // Disegna e muove il secondo braccio
+    // Disegna e muove il secondo braccio al posizionamento calcolato.
     const { secondArmEndX, secondArmEndY } = drawAndMoveSecondArm(
       ctx2,
       angShoulder,
@@ -254,7 +190,7 @@ export function ScaraSimulation2d(props: Props) {
       LINE_WIDTH_ARM,
     );
 
-    // Aggiungi la posizione dell'effettore al percorso
+    // Aggiunge la posizione dell'effettore al percorso.
     if (path.current.length === 1) {
       // siamo all'inizio
       path.current.push({
@@ -273,12 +209,13 @@ export function ScaraSimulation2d(props: Props) {
       });
     }
 
-    // Disegna sul canvas
+    // Disegna sul canvas il percorso tracciato dall'effettore.
     drawGCodePath(ctx, path.current, DRAW_GCODE_PATH_LINE_WIDTH);
 
-    // Sposta il punto effector
+    // Sposta il punto dell'effettore alla nuova posizione (x, y).
     effectorPoint(ctx2, x, y, OFFSET_EFFECTOR_X, OFFSET_EFFECTOR_Y);
   }
+
   const initializeCanvas = (canvas, canvasPath) => {
     canvas.height = canvasHeight;
     canvas.width = canvasWidth;
@@ -317,51 +254,27 @@ export function ScaraSimulation2d(props: Props) {
   };
 
   React.useEffect(() => {
-    // Resetta il contatore gcodeCount e il percorso
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    // gcodeCount = 0;
     let requestAnimationId: number;
     let resetCanvasPath = true;
-    // path.current = [
-    //   {
-    //     x: 0,
-    //     y: 0,
-    //     color: 'transparent',
-    //     canDraw: false,
-    //   },
-    // ];
 
-    // canvas config
+    // *********** canvas config ******************
+    // Crea il primo canvas - Layer uno
     const canvas = canvasRef.current as HTMLCanvasElement;
-    const canvasPath = canvasPathRef.current as HTMLCanvasElement;
     const ctx = canvas.getContext('2d');
+    // Crea il secondo canvas - Layer due
+    const canvasPath = canvasPathRef.current as HTMLCanvasElement;
     const ctx2 = canvasPath.getContext('2d');
+    // ********************************************
     if (canvas == null || ctx == null) return;
     if (canvasPath == null || ctx2 == null) return;
 
-    initializeCanvas(canvas, canvasPath);
-    setupCanvasContext(ctx, ctx2);
+    initializeCanvas(canvas, canvasPath); // Imposta le proprietà relative ai due canvas (canvas e canvasPath)
+    setupCanvasContext(ctx, ctx2); // Imposta nuove coordinate e cambia direzione asse y
 
-    // Disegna la semi circonferenza massima che il braccio può disegnare
-    // Disegna l'area massima rettangolare inscritta nel cerchio
-    // if (!maxWorkingAreaPainted.current) {
-    //   maxWorkingAreaPainted.current = true;
-    //   maxWorkingArea(ctx2, ctx, start, TOTAL_ARMS_LENGTH, OFFSET_EFFECTOR_X);
-    // }
-
-    const animateCallback = (animate) => {
-      // console.log('animate started  --- play', play.current);
-      // console.log(
-      //   'animate started  --- gcodeCount.current',
-      //   gcodeCount.current,
-      // );
-      // console.log(
-      //   'animate started  --- gcodeParsed.length',
-      //   gcodeParsed.length,
-      // );
-      // if (!gcodeParsed.length || !play) return;
+    function animate() {
       if (ctx == null) return;
       if (!play.current) {
+        // Sposta il braccio manualmente senza il gcode
         start(
           ctx2,
           ctx,
@@ -370,27 +283,23 @@ export function ScaraSimulation2d(props: Props) {
           false,
           'red',
         );
+      } else {
+        // Disegna il gcode
+        resetCanvasPath = evaluateAndDrawGcode(
+          play,
+          gcodeParsed,
+          canvasRef,
+          gcodeCount,
+          start,
+          ctx2,
+          ctx,
+          resetCanvasPath,
+          manualPositionRef.current.x,
+          manualPositionRef.current.y,
+        );
       }
 
-      resetCanvasPath = evaluateAndDrawGcode(
-        play,
-        gcodeParsed,
-        canvasRef,
-        gcodeCount,
-        start,
-        ctx2,
-        ctx,
-        resetCanvasPath,
-        setIsPlaying,
-        manualPositionRef.current.x,
-        manualPositionRef.current.y,
-      );
-
       requestAnimationId = requestAnimationFrame(animate);
-    };
-
-    function animate() {
-      animateCallback(animate);
     }
 
     animate();
@@ -473,12 +382,6 @@ export function ScaraSimulation2d(props: Props) {
             >
               Spegni Blu
             </Button>
-            <Button variant="contained" onclick={() => sendGcode(gcodeParsed)}>
-              invia gcode
-            </Button>
-            <Button variant="contained" onclick={() => prepareGcode()}>
-              prepara gcode
-            </Button>
             <Button
               variant="contained"
               onclick={() => {
@@ -530,10 +433,6 @@ export function ScaraSimulation2d(props: Props) {
             >
               sinistra
             </Button>
-            <div>
-              <h2>Data from Arduino:</h2>
-              <p>{serialData}</p>
-            </div>
           </div>
           <SimulationOptions />
         </section>

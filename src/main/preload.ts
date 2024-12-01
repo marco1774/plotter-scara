@@ -11,8 +11,7 @@ export type Channels =
   | 'prepareGcode'
   | 'initBuffer-start'
   | 'initBuffer-end'
-  | 'initBuffer-stop'
-  | 'gCode-GET';
+  | 'initBuffer-stop';
 
 const electronHandler = {
   ipcRenderer: {

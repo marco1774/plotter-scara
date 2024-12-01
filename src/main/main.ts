@@ -13,8 +13,6 @@ import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 // eslint-disable-next-line import/no-cycle
-import { ReadlineParser } from 'serialport';
-// eslint-disable-next-line import/no-cycle
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 
@@ -37,15 +35,6 @@ SerialPort.list()
     const port = new SerialPort({
       path: ports.find((com) => com.productId === '0043').path,
       baudRate: 115200,
-    });
-    const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
-    parser.on('data', (data) => {
-      console.log('data da arduino', data);
-      if (!mainWindow) return;
-      mainWindow.webContents.send('arduino-serial-data', data);
-      if (data === 'gCode-GET') {
-        mainWindow.webContents.send('gCode-GET');
-      }
     });
     // Listen for messages from renderer process
     ipcMain.on('send-serial-command', (event, command) => {
