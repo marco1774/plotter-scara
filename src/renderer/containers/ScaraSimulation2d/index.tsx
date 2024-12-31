@@ -50,6 +50,7 @@ import SimulationOptions from '../../components/SimulationOptions';
 import { useLoadGcodeContent } from './hooks/useLoadGcodeContent';
 import { useParseGcodeContent } from './hooks/useParseGcodeContent';
 import { Button } from '../../components/Button';
+import ManualPositionBtn from '../../components/ManualPositionBtn';
 
 interface Props {}
 
@@ -114,6 +115,43 @@ export function ScaraSimulation2d(props: Props) {
     window.electron.ipcRenderer.sendMessage('send-serial-command', command);
   };
 
+  // Gestione dati ricevuti da arduino
+  React.useEffect(() => {
+    const serialDataFromArduino = (parm: any) => {
+      console.log('%cserialDataFromArduino ~ parm:', 'color:red', parm);
+    };
+
+    // Sottoscrizione all'evento IPC Renderer 'gcode:load'.
+    const unsubscribe = window.electron.ipcRenderer.on(
+      'serialData',
+      serialDataFromArduino,
+    );
+
+    // Pulizia del listener quando il componente viene smontato.
+    return () => {
+      unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Nessuna dipendenza, l'effetto esegue solo una volta.
+
+  // ************************************************************
+
+  function sendCommandsWithDelay(commands, delay = 30) {
+    let index = 0;
+
+    const sendNextCommand = () => {
+      if (index < commands.length) {
+        const command = commands[index].toString();
+        sendCommand(command); // La tua funzione per inviare un comando
+        console.log(`Comando inviato: ${command}`);
+        index++;
+        setTimeout(sendNextCommand, delay); // Pianifica il prossimo invio
+      }
+    };
+
+    sendNextCommand(); // Inizia la sequenza
+  }
+
   //----------------------------------------------------------------------
   //                               ++START++
   // Punto di ingresso del gcode caricato da file txt
@@ -129,6 +167,7 @@ export function ScaraSimulation2d(props: Props) {
   const { gcodeParsed } = useParseGcodeContent({
     gcodeContentString,
   });
+  console.log('🚀 ~ ScaraSimulation2d ~ gcodeParsed:', gcodeParsed);
   //----------------------------------------------------------------------
 
   function handlePlay() {
@@ -137,6 +176,23 @@ export function ScaraSimulation2d(props: Props) {
   function handlePause() {
     pause.current = !pause.current;
   }
+
+  // Controlla il movimento manuale dello scara in base alla posizione manuale passata
+  function handleManualPosition(x, y) {
+    manualPositionRef.current.x = x;
+    manualPositionRef.current.y = y;
+  }
+
+  /*
+   * Funzione di avvio del disegno o della simulazione.
+   *
+   * @param ctx2 - Contesto grafico 2D per il disegno aggiuntivo o secondario.
+   * @param ctx - Contesto grafico 2D principale utilizzato per il rendering della simulazione.
+   * @param x - Coordinata x iniziale del punto di partenza.
+   * @param y - Coordinata y iniziale del punto di partenza.
+   * @param canDraw - Flag booleano che indica se è consentito o meno effettuare il disegno (abilitazione/disabilitazione).
+   * @param gcodePathColor - Colore utilizzato per visualizzare il percorso G-code nella simulazione.
+   */
 
   function start(
     ctx2: any,
@@ -352,17 +408,20 @@ export function ScaraSimulation2d(props: Props) {
 
           <div>
             <h1>Arduino Serial Communication</h1>
-            <Button variant="contained" onclick={() => sendCommand('accendi')}>
-              Accendi
+            <Button
+              variant="contained"
+              onclick={() => sendCommand('0.0,0.0,0')}
+            >
+              Invia comando prova arduino azzeramento
             </Button>
-            <Button variant="contained" onclick={() => sendCommand('spegni')}>
-              Spegni
+            <Button variant="contained" onclick={() => sendCommand('0,140,1')}>
+              porta a 20 20
             </Button>
             <Button
               variant="contained"
-              onclick={() => sendCommand('accendi-verde')}
+              onclick={() => sendCommandsWithDelay(gcodeParsed, 0)}
             >
-              Accendi Verde
+              Serie comandi
             </Button>
             <Button
               variant="contained"
@@ -382,58 +441,11 @@ export function ScaraSimulation2d(props: Props) {
             >
               Spegni Blu
             </Button>
-            <Button
-              variant="contained"
-              onclick={() => {
-                manualPositionRef.current = {
-                  x: manualPositionRef.current.x,
-                  y: manualPositionRef.current.y + 10,
-                };
-                path.current = [
-                  {
-                    ...path.current[0],
-                    x: manualPositionRef.current.x,
-                    y: manualPositionRef.current.y + 10,
-                  },
-                ];
-              }}
-            >
-              avanti
-            </Button>
-            <Button
-              variant="contained"
-              onclick={() => {
-                manualPositionRef.current = {
-                  x: manualPositionRef.current.x,
-                  y: manualPositionRef.current.y - 10,
-                };
-              }}
-            >
-              indietro
-            </Button>
-            <Button
-              variant="contained"
-              onclick={() => {
-                manualPositionRef.current = {
-                  x: manualPositionRef.current.x + 10,
-                  y: manualPositionRef.current.y,
-                };
-              }}
-            >
-              destra
-            </Button>
-            <Button
-              variant="contained"
-              onclick={() => {
-                manualPositionRef.current = {
-                  x: manualPositionRef.current.x - 10,
-                  y: manualPositionRef.current.y,
-                };
-              }}
-            >
-              sinistra
-            </Button>
           </div>
+          <ManualPositionBtn
+            handleManualPosition={handleManualPosition}
+            manualPositionRef={manualPositionRef.current}
+          />
           <SimulationOptions />
         </section>
       </div>

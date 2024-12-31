@@ -29,16 +29,74 @@ class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 
+// SerialPort.list()
+//   .then((ports: any) => {
+//     console.log('ports', ports);
+//     const port = new SerialPort({
+//       path: ports.find((com) => com.productId === '7523').path,
+//       baudRate: 115200,
+//     });
+
+//     // Listen for messages from renderer process
+//     ipcMain.on('send-serial-command', (event, command) => {
+//       console.log('Sending command to Arduino:', command);
+//       port.write(`${command}\n`);
+//     });
+//     ipcMain.on('initBuffer-start', () => {
+//       port.write('initBuffer-start\n');
+//     });
+//     ipcMain.on('initBuffer-stop', () => {
+//       port.write('initBuffer-stop\n');
+//     });
+//     ipcMain.on('initBuffer-end', () => {
+//       port.write('initBuffer-end\n');
+//     });
+//     ipcMain.on('prepareGcode', (event, command) => {
+//       port.write(`${command}\n`);
+//     });
+//   })
+//   .catch(console.log);
+
 SerialPort.list()
   .then((ports: any) => {
     console.log('ports', ports);
+
+    // Trova la porta che corrisponde al tuo Arduino
+    const selectedPort = ports.find((com) => com.productId === '7523');
+
+    if (!selectedPort) {
+      console.error('Arduino non trovato tra le porte disponibili.');
+      return;
+    }
+
     const port = new SerialPort({
-      path: ports.find((com) => com.productId === '0043').path,
-      baudRate: 115200,
+      path: selectedPort.path,
+      baudRate: 250000, // Configura la velocità corretta
     });
-    // Listen for messages from renderer process
+
+    // Configura un parser per leggere i dati
+    const { ReadlineParser } = require('@serialport/parser-readline');
+    const parser = port.pipe(new ReadlineParser({ delimiter: '\r\n' })); // Cambia delimitatore se necessario
+
+    // Legge i dati dalla porta seriale
+    parser.on('data', (data: string) => {
+      console.log('Dati ricevuti da Arduino:', data);
+
+      // Puoi anche inviare i dati ricevuti al renderer process, se necessario
+      if (mainWindow) {
+        console.log('Invio dati al renderer:', data); // Log aggiuntivo per vedere se i dati vengono inviati
+        mainWindow.webContents.send('serialData', data);
+      }
+    });
+
+    // Gestisce eventuali errori
+    port.on('error', (err) => {
+      console.error('Errore sulla porta seriale:', err);
+    });
+
+    // Eventi IPC per inviare comandi ad Arduino
     ipcMain.on('send-serial-command', (event, command) => {
-      // console.log('Sending command to Arduino:', command);
+      console.log('Invio comando ad Arduino:', command);
       port.write(`${command}\n`);
     });
     ipcMain.on('initBuffer-start', () => {

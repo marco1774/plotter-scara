@@ -34,7 +34,7 @@ export function useParseGcodeContent({ gcodeContentString }) {
         const analyzedLine = line.split(' ');
         setGcodeParsed((prev) => [
           ...prev,
-          [+analyzedLine[1].slice(1), +analyzedLine[2].slice(1), true],
+          [+analyzedLine[1].slice(1), +analyzedLine[2].slice(1), 1],
         ]);
       }
       // Se la riga include 'F', 'X' e 'Y'.
@@ -42,7 +42,7 @@ export function useParseGcodeContent({ gcodeContentString }) {
         const analyzedLine = line.split(' ');
         setGcodeParsed((prev) => [
           ...prev,
-          [+analyzedLine[1].slice(1), +analyzedLine[2].slice(1), false],
+          [+analyzedLine[1].slice(1), +analyzedLine[2].slice(1), 0],
         ]);
       }
       // Se la riga non include né 'E', né 'F', né 'X', né 'Y'.

@@ -204,6 +204,20 @@ export function effectorPoint(
   ctx.closePath();
 }
 
+/**
+ * Risolve il problema dell'inversa cinematica per un braccio robotico SCARA.
+ * Questa funzione calcola gli angoli del braccio robotico basandosi sulle coordinate (x, y) del punto di effetto finale.
+ *
+ * @param x - Coordinata x del punto di effetto finale rispetto all'origine del braccio.
+ * @param y - Coordinata y del punto di effetto finale rispetto all'origine del braccio.
+ * @param FIRST_ARM_LENGTH - Lunghezza del primo braccio (segmento tra l'articolo 0 e l'articolo 1).
+ * @param SECOND_ARM_LENGTH - Lunghezza del secondo braccio (segmento tra l'articolo 1 e il punto di effetto finale).
+ * @param OFFSET_EFFECTOR_X - Offset x dell'effettore rispetto alla posizione calcolata.
+ * @param OFFSET_ORIGIN_X - Offset x dell'origine del braccio rispetto all'origine globale.
+ * @param OFFSET_EFFECTOR_Y - Offset y dell'effettore rispetto alla posizione calcolata.
+ *
+ * @returns Un oggetto contenente le coordinate (x, y) della posizione del primo articolo e gli angoli degli articoli in radianti.
+ */
 export function inverseKinematicsSolver(
   x,
   y,

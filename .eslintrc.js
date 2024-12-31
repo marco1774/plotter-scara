@@ -14,6 +14,14 @@ module.exports = {
     'no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars': 'error',
     'import/prefer-default-export': 'off',
+    'react/jsx-no-bind': [
+      1,
+      {
+        allowArrowFunctions: true,
+        allowFunctions: true,
+        allowBind: true,
+      },
+    ],
   },
   parserOptions: {
     ecmaVersion: 2022,
