@@ -211,50 +211,35 @@ export function XYToAngleArduino(
 //   return radians * (180 / pi); // Converte i radianti in gradi
 // }
 
-export function XYToAngle(x, y, FIRST_ARM_LENGTH, SECOND_ARM_LENGTH) {
-  console.log('x, y:', x, y);
-  const hypotenuse = Math.sqrt(x ** 2 + y ** 2); // Calcola la distanza dall'origine all'effettore
-  console.log('Ipotenusa:', hypotenuse);
-
-  if (hypotenuse > FIRST_ARM_LENGTH + SECOND_ARM_LENGTH) {
-    throw new Error('Cannot reach target.'); // Se la posizione è fuori dalla portata, lancia un errore
-  }
-
-  // Calcola l'angolo dell'ipotenusa rispetto all'asse X utilizzando atan2, che gestisce tutti i quadranti
-  const hypotenuseAngle = Math.atan2(y, x);
-  console.log('Angolo ipotenusa:', radiansToDegrees(hypotenuseAngle), 'gradi');
-
-  // Calcola l'angolo interno tra l'ipotenusa e il primo braccio
+export function XYToAngle(
+  x: number,
+  y: number,
+  FIRST_ARM_LENGTH: number,
+  SECOND_ARM_LENGTH: number,
+) {
+  const hypotenuse = Math.sqrt(x ** 2 + y ** 2);
+  if (hypotenuse > FIRST_ARM_LENGTH + SECOND_ARM_LENGTH)
+    throw new Error(
+      'Cannot reach {hypotenuse}; total arm length is {FIRST_ARM_LENGTH + SECOND_ARM_LENGTH}',
+    );
+  const hypotenuseAngle = Math.asin(x / hypotenuse); // seno inverso in radianti di un numero
   const innerAngle = Math.acos(
+    // coseno inverso in radianti di un numero
     (hypotenuse ** 2 + FIRST_ARM_LENGTH ** 2 - SECOND_ARM_LENGTH ** 2) /
       (2 * hypotenuse * FIRST_ARM_LENGTH),
   );
-  console.log('innerAngle:', radiansToDegrees(innerAngle), 'gradi');
-
-  // Calcola l'angolo esterno tra i due bracci
   const outerAngle = Math.acos(
     (FIRST_ARM_LENGTH ** 2 + SECOND_ARM_LENGTH ** 2 - hypotenuse ** 2) /
       (2 * FIRST_ARM_LENGTH * SECOND_ARM_LENGTH),
   );
-  console.log('outerAngle:', radiansToDegrees(outerAngle), 'gradi');
-
-  // Calcola l'angolo della spalla e del gomito
   const shoulderMotorAngle = hypotenuseAngle - innerAngle;
   const elbowMotorAngle = Math.PI - outerAngle;
 
-  console.log(
-    'shoulderMotorAngle (gradi):',
-    radiansToDegrees(shoulderMotorAngle),
-  );
-  console.log('elbowMotorAngle (gradi):', radiansToDegrees(elbowMotorAngle));
-
-  // Converte gli angoli in gradi
   return [
     radiansToDegrees(shoulderMotorAngle),
     radiansToDegrees(elbowMotorAngle),
   ];
 }
-
 export function effectorPoint(
   ctx: CanvasRenderingContext2D,
   x: number,

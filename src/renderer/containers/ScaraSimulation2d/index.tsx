@@ -73,7 +73,7 @@ export function ScaraSimulation2d(props: Props) {
     },
   ]);
   // **************************** Modifica la scala del canvas ********************************
-  const SCALA = 1;
+  const SCALA = 2;
   // Modifica la velocità dell'animazione
   const FPS = 60;
   // Il braccio è ancorato all'origine 0,0, questo aggiunge un offset in X
