@@ -39,6 +39,7 @@ import {
   effectorPoint,
   inverseKinematicsSolver,
   evaluateAndDrawGcode,
+  inverseKinematicsSolverArduino,
 } from './scaraUtils';
 import { gcode } from './scaraUtils/gcodeProva';
 import { MainContainer } from '../../components/MainContainer';
@@ -72,7 +73,7 @@ export function ScaraSimulation2d(props: Props) {
     },
   ]);
   // **************************** Modifica la scala del canvas ********************************
-  const SCALA = 2;
+  const SCALA = 1;
   // Modifica la velocità dell'animazione
   const FPS = 60;
   // Il braccio è ancorato all'origine 0,0, questo aggiunge un offset in X
@@ -115,6 +116,12 @@ export function ScaraSimulation2d(props: Props) {
     window.electron.ipcRenderer.sendMessage('send-serial-command', command);
   };
 
+  const [commandToSendX, setCommandToSendX] = React.useState(0);
+  const [commandToSendY, setCommandToSendY] = React.useState(0);
+  const [commandToSendZ, setCommandToSendZ] = React.useState(0);
+  const [angoloSpalla, setAngoloSpalla] = React.useState(0);
+  const [angoloGomito, setAngoloGomito] = React.useState(0);
+
   // Gestione dati ricevuti da arduino
   React.useEffect(() => {
     const serialDataFromArduino = (parm: any) => {
@@ -136,16 +143,42 @@ export function ScaraSimulation2d(props: Props) {
 
   // ************************************************************
 
-  function sendCommandsWithDelay(commands, delay = 30) {
+  function sendCommandsWithDelay(commands) {
+    const x0 = -110; // Nuova origine x
+    const y0 = 50; // Nuova origine y
+
     let index = 0;
 
     const sendNextCommand = () => {
       if (index < commands.length) {
-        const command = commands[index].toString();
-        sendCommand(command); // La tua funzione per inviare un comando
-        console.log(`Comando inviato: ${command}`);
+        const originalX = commands[index][0];
+        const originalY = -commands[index][1];
+
+        // Traslazione corretta delle coordinate
+        const translatedX = originalX + x0; // Somma per compensare la traslazione
+        const translatedY = originalY - y0; // Sottrazione per y
+
+        console.log(
+          `Comando originale: (${originalX}, ${originalY}), traslato: (${translatedX}, ${translatedY})`,
+        );
+
+        // Calcolo degli angoli con la cinematica inversa
+        const { angShoulderGrad, angElbowGrad } =
+          inverseKinematicsSolverArduino(
+            translatedX,
+            translatedY,
+            FIRST_ARM_LENGTH,
+            SECOND_ARM_LENGTH,
+          );
+
+        console.log(
+          `Comando inviato ad Arduino: ${angShoulderGrad},${angElbowGrad},0`,
+        );
+
+        sendCommand(`${angShoulderGrad},${angElbowGrad},0`); // La tua funzione per inviare un comando
+
         index++;
-        setTimeout(sendNextCommand, delay); // Pianifica il prossimo invio
+        setTimeout(sendNextCommand, 0); // Pianifica il prossimo invio
       }
     };
 
@@ -410,7 +443,7 @@ export function ScaraSimulation2d(props: Props) {
             <h1>Arduino Serial Communication</h1>
             <Button
               variant="contained"
-              onclick={() => sendCommand('0.0,0.0,0')}
+              onclick={() => sendCommandsWithDelay([[1, 1, 0]])}
             >
               Invia comando prova arduino azzeramento
             </Button>
@@ -419,27 +452,80 @@ export function ScaraSimulation2d(props: Props) {
             </Button>
             <Button
               variant="contained"
-              onclick={() => sendCommandsWithDelay(gcodeParsed, 0)}
+              onclick={() => sendCommandsWithDelay(gcodeParsed)}
             >
               Serie comandi
             </Button>
             <Button
               variant="contained"
-              onclick={() => sendCommand('spegni-verde')}
+              onclick={() => sendCommandsWithDelay([[10.0, 0.0, 0]])}
             >
-              Spegni Verde
+              x=5
             </Button>
             <Button
               variant="contained"
-              onclick={() => sendCommand('accendi-blu')}
+              onclick={() => sendCommandsWithDelay([[-10.0, 0.0, 0]])}
             >
-              Accendi Blu
+              x=-5
             </Button>
             <Button
               variant="contained"
-              onclick={() => sendCommand('spegni-blu')}
+              onclick={() => sendCommandsWithDelay([[0.0, 10.0, 0]])}
             >
-              Spegni Blu
+              y=10
+            </Button>
+            <Button
+              variant="contained"
+              onclick={() => sendCommandsWithDelay([[0.0, -10.0, 0]])}
+            >
+              y=-10
+            </Button>
+            <input
+              type="text"
+              placeholder="set X"
+              onChange={(e) => setCommandToSendX(+e.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="set Y"
+              onChange={(e) => setCommandToSendY(+e.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="set Z"
+              onChange={(e) => setCommandToSendZ(+e.target.value)}
+            />
+            <Button
+              variant="contained"
+              onclick={() =>
+                sendCommandsWithDelay([
+                  [commandToSendX, commandToSendY, commandToSendZ],
+                ])
+              }
+            >
+              Execute comando
+            </Button>
+            <input
+              type="number"
+              placeholder="angolo spalla"
+              onChange={(e) => setAngoloSpalla(+e.target.value)}
+            />
+            <Button
+              variant="contained"
+              onclick={() => sendCommand(`${angoloSpalla},${angoloGomito},0`)}
+            >
+              angolo spalla
+            </Button>
+            <input
+              type="nember"
+              placeholder="angolo gomito"
+              onChange={(e) => setAngoloGomito(+e.target.value)}
+            />
+            <Button
+              variant="contained"
+              onclick={() => sendCommand(`${angoloSpalla},${angoloGomito},0`)}
+            >
+              angolo gomito
             </Button>
           </div>
           <ManualPositionBtn

@@ -156,30 +156,99 @@ function radiansToDegrees(radians: number) {
   return radians * (180 / pi);
 }
 
-export function XYToAngle(
+export function XYToAngleArduino(
   x: number,
   y: number,
   FIRST_ARM_LENGTH: number,
   SECOND_ARM_LENGTH: number,
 ) {
   const hypotenuse = Math.sqrt(x ** 2 + y ** 2);
+  console.log('Ipotenusa:', hypotenuse);
+
   if (hypotenuse > FIRST_ARM_LENGTH + SECOND_ARM_LENGTH)
     throw new Error(
       'Cannot reach {hypotenuse}; total arm length is {FIRST_ARM_LENGTH + SECOND_ARM_LENGTH}',
     );
+
   const hypotenuseAngle = Math.asin(x / hypotenuse); // seno inverso in radianti di un numero
+  console.log('Angolo ipotenusa:', radiansToDegrees(hypotenuseAngle), 'gradi');
+
   const innerAngle = Math.acos(
     // coseno inverso in radianti di un numero
     (hypotenuse ** 2 + FIRST_ARM_LENGTH ** 2 - SECOND_ARM_LENGTH ** 2) /
       (2 * hypotenuse * FIRST_ARM_LENGTH),
   );
+  console.log('innerAngle:', radiansToDegrees(innerAngle), 'gradi');
+
   const outerAngle = Math.acos(
     (FIRST_ARM_LENGTH ** 2 + SECOND_ARM_LENGTH ** 2 - hypotenuse ** 2) /
       (2 * FIRST_ARM_LENGTH * SECOND_ARM_LENGTH),
   );
+  console.log('outerAngle:', radiansToDegrees(outerAngle), 'gradi');
+
+  const shoulderMotorAngle = hypotenuseAngle - innerAngle;
+  const elbowMotorAngle = Math.PI - outerAngle;
+  console.log(
+    'shoulderMotorAngle (gradi):',
+    radiansToDegrees(shoulderMotorAngle),
+  );
+  console.log('elbowMotorAngle (gradi):', radiansToDegrees(elbowMotorAngle));
+
+  const elbowMotorAngleCorrected = elbowMotorAngle + shoulderMotorAngle;
+  return [
+    radiansToDegrees(shoulderMotorAngle),
+    radiansToDegrees(elbowMotorAngleCorrected),
+  ];
+
+  // return [
+  //   radiansToDegrees(shoulderMotorAngle),
+  //   radiansToDegrees(elbowMotorAngle),
+  // ];
+}
+
+// function radiansToDegrees(radians) {
+//   const pi = Math.PI;
+//   return radians * (180 / pi); // Converte i radianti in gradi
+// }
+
+export function XYToAngle(x, y, FIRST_ARM_LENGTH, SECOND_ARM_LENGTH) {
+  console.log('x, y:', x, y);
+  const hypotenuse = Math.sqrt(x ** 2 + y ** 2); // Calcola la distanza dall'origine all'effettore
+  console.log('Ipotenusa:', hypotenuse);
+
+  if (hypotenuse > FIRST_ARM_LENGTH + SECOND_ARM_LENGTH) {
+    throw new Error('Cannot reach target.'); // Se la posizione è fuori dalla portata, lancia un errore
+  }
+
+  // Calcola l'angolo dell'ipotenusa rispetto all'asse X utilizzando atan2, che gestisce tutti i quadranti
+  const hypotenuseAngle = Math.atan2(y, x);
+  console.log('Angolo ipotenusa:', radiansToDegrees(hypotenuseAngle), 'gradi');
+
+  // Calcola l'angolo interno tra l'ipotenusa e il primo braccio
+  const innerAngle = Math.acos(
+    (hypotenuse ** 2 + FIRST_ARM_LENGTH ** 2 - SECOND_ARM_LENGTH ** 2) /
+      (2 * hypotenuse * FIRST_ARM_LENGTH),
+  );
+  console.log('innerAngle:', radiansToDegrees(innerAngle), 'gradi');
+
+  // Calcola l'angolo esterno tra i due bracci
+  const outerAngle = Math.acos(
+    (FIRST_ARM_LENGTH ** 2 + SECOND_ARM_LENGTH ** 2 - hypotenuse ** 2) /
+      (2 * FIRST_ARM_LENGTH * SECOND_ARM_LENGTH),
+  );
+  console.log('outerAngle:', radiansToDegrees(outerAngle), 'gradi');
+
+  // Calcola l'angolo della spalla e del gomito
   const shoulderMotorAngle = hypotenuseAngle - innerAngle;
   const elbowMotorAngle = Math.PI - outerAngle;
 
+  console.log(
+    'shoulderMotorAngle (gradi):',
+    radiansToDegrees(shoulderMotorAngle),
+  );
+  console.log('elbowMotorAngle (gradi):', radiansToDegrees(elbowMotorAngle));
+
+  // Converte gli angoli in gradi
   return [
     radiansToDegrees(shoulderMotorAngle),
     radiansToDegrees(elbowMotorAngle),
@@ -206,7 +275,7 @@ export function effectorPoint(
 
 /**
  * Risolve il problema dell'inversa cinematica per un braccio robotico SCARA.
- * Questa funzione calcola gli angoli del braccio robotico basandosi sulle coordinate (x, y) del punto di effetto finale.
+ * Questa funzione calcola gli angoli dei bracci del braccio robotico basandosi sulle coordinate (x, y) del punto di effetto finale.
  *
  * @param x - Coordinata x del punto di effetto finale rispetto all'origine del braccio.
  * @param y - Coordinata y del punto di effetto finale rispetto all'origine del braccio.
@@ -247,6 +316,29 @@ export function inverseKinematicsSolver(
     FIRST_ARM_Y,
     angElbow,
     angShoulder,
+  };
+}
+export function inverseKinematicsSolverArduino(
+  x,
+  y,
+  FIRST_ARM_LENGTH,
+  SECOND_ARM_LENGTH,
+) {
+  // Calcola gli angoli tramite la funzione XYToAngle
+  const [tetha1, tetha2] = XYToAngleArduino(
+    x,
+    y,
+    FIRST_ARM_LENGTH,
+    SECOND_ARM_LENGTH,
+  );
+  console.log('tetha1-angShoulderGrad, tetha2-angElbowGrad:', tetha1, tetha2);
+
+  const angShoulderGrad = tetha1; // Angolo della spalla in gradi
+  const angElbowGrad = tetha2; // Angolo del gomito in gradi
+
+  return {
+    angShoulderGrad,
+    angElbowGrad,
   };
 }
 
